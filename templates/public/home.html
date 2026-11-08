@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import donor_card, stat_card, section_heading, empty_state %}
+
+{% block title %}Blood Connect — Find blood donors near you{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero__bg" aria-hidden="true">
+    <span class="hero__blob hero__blob--one"></span>
+    <span class="hero__blob hero__blob--two"></span>
+    <span class="hero__grid"></span>
+  </div>
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="eyebrow eyebrow--pill"><span class="pulse-dot"></span> Community-powered blood network</span>
+        <h1 class="hero__title">Every drop can be<br><span>someone's tomorrow.</span></h1>
+        <p class="hero__lead">
+          Blood Connect brings verified donors and patients together in minutes — search by blood
+          group and city, send a request, and coordinate safely with consent-first contact sharing.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn-red btn-lg" href="{{ url_for('main.find_donors') }}">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Find a donor
+          </a>
+          <a class="btn btn-outline-dark btn-lg" href="{{ url_for('auth.register_donor') }}">
+            <i class="fa-solid fa-droplet" aria-hidden="true"></i> Become a donor
+          </a>
+        </div>
+        <ul class="hero__trust">
+          <li><i class="fa-solid fa-shield-heart"></i> Verified donor profiles</li>
+          <li><i class="fa-solid fa-lock"></i> Consent-first contact</li>
+          <li><i class="fa-solid fa-hand-holding-heart"></i> Free for everyone</li>
+        </ul>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="hero-panel-wrap">
+          <div class="hero-illustration" aria-hidden="true">
+            <svg viewBox="0 0 420 420" role="presentation">
+              <defs>
+                <linearGradient id="dropGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#ff5c6c"/>
+                  <stop offset="100%" stop-color="#a50f23"/>
+                </linearGradient>
+                <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#ffd8dd" stop-opacity=".9"/>
+                  <stop offset="100%" stop-color="#ffd8dd" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              <circle cx="210" cy="210" r="190" fill="url(#glow)"/>
+              <circle cx="210" cy="210" r="148" fill="none" stroke="#f3c3ca" stroke-width="1.5" stroke-dasharray="5 9"/>
+              <circle cx="210" cy="210" r="108" fill="none" stroke="#f3c3ca" stroke-width="1.5"/>
+              <path d="M210 88c0 0-82 92-82 146a82 82 0 0 0 164 0c0-54-82-146-82-146Z" fill="url(#dropGrad)"/>
+              <path d="M174 236a36 36 0 0 0 30 53" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="10" stroke-linecap="round"/>
+              <g fill="#fff" fill-opacity=".92">
+                <circle cx="335" cy="120" r="6"/><circle cx="86" cy="94" r="4"/><circle cx="342" cy="300" r="5"/><circle cx="80" cy="310" r="7"/>
+              </g>
+            </svg>
+          </div>
+
+          <div class="hero-badge hero-badge--top">
+            <span class="hero-badge__icon"><i class="fa-solid fa-user-shield"></i></span>
+            <div><strong>{{ stats.available_donors }}</strong><small>verified donors available</small></div>
+          </div>
+
+          <div class="hero-quick-card">
+            <div class="hero-quick-card__head">
+              <div>
+                <span class="eyebrow">Quick search</span>
+                <h2>What blood group do you need?</h2>
+              </div>
+              <span class="live-chip"><span class="pulse-dot"></span> Live</span>
+            </div>
+            <div class="blood-choice-grid">
+              {% for group in blood_groups %}
+                <a class="blood-choice" href="{{ url_for('main.find_donors', blood_group=group) }}">
+                  <span class="blood-choice__group">{{ group }}</span>
+                  <span class="blood-choice__count">{{ group_counts[group] }} donor{{ '' if group_counts[group] == 1 else 's' }}</span>
+                </a>
+              {% endfor %}
+            </div>
+            <a class="hero-quick-card__foot" href="{{ url_for('main.find_donors') }}">
+              Browse all donors <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+
+          <div class="hero-badge hero-badge--bottom">
+            <span class="hero-badge__icon hero-badge__icon--green"><i class="fa-solid fa-hand-holding-medical"></i></span>
+            <div><strong>{{ stats.lives_impacted }}</strong><small>units pledged through completed requests</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stats-band" aria-label="Platform statistics">
+  <div class="container">
+    <div class="stats-band__grid">
+      <div class="stats-band__item"><strong>{{ stats.donors }}</strong><span>Registered donors</span></div>
+      <div class="stats-band__item"><strong>{{ stats.available_donors }}</strong><span>Available &amp; verified</span></div>
+      <div class="stats-band__item"><strong>{{ stats.completed_requests }}</strong><span>Requests completed</span></div>
+      <div class="stats-band__item"><strong>{{ stats.cities }}</strong><span>Cities covered</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--how">
+  <div class="container">
+    {{ section_heading("How it works", "From request to donation, in three clear steps", "Blood Connect keeps every step transparent — for donors, receivers and administrators.") }}
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="path-card path-card--receiver">
+          <div class="path-card__head">
+            <span class="path-card__icon"><i class="fa-solid fa-hand-holding-medical"></i></span>
+            <div><span class="eyebrow">For receivers</span><h3>Find a donor when every minute counts</h3></div>
+          </div>
+          <ol class="step-list">
+            <li><span>01</span><div><strong>Search with confidence</strong><p>Filter verified, eligible donors by blood group, city and availability.</p></div></li>
+            <li><span>02</span><div><strong>Send a clear request</strong><p>Share the hospital, urgency, units needed and a short message.</p></div></li>
+            <li><span>03</span><div><strong>Track the response</strong><p>Get notified when the donor accepts, then coordinate safely.</p></div></li>
+          </ol>
+          <a class="link-arrow" href="{{ url_for('main.find_donors') }}">Find donors <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="path-card path-card--donor">
+          <div class="path-card__head">
+            <span class="path-card__icon"><i class="fa-solid fa-droplet"></i></span>
+            <div><span class="eyebrow">For donors</span><h3>Donate on your terms, only when you can</h3></div>
+          </div>
+          <ol class="step-list">
+            <li><span>01</span><div><strong>Build a verified profile</strong><p>Add your blood group, city and donation history. Admin verification builds trust.</p></div></li>
+            <li><span>02</span><div><strong>Control your availability</strong><p>Switch available or unavailable at any time. A 90-day safety cooldown is automatic.</p></div></li>
+            <li><span>03</span><div><strong>Respond to requests</strong><p>Review hospital details and accept or decline — your phone stays private until you accept.</p></div></li>
+          </ol>
+          <a class="link-arrow" href="{{ url_for('auth.register_donor') }}">Become a donor <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--groups">
+  <div class="container">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-5">
+        <span class="eyebrow">One network, every group</span>
+        <h2 class="section-title">Some blood groups are rarer. Your city needs every one.</h2>
+        <p class="section-lead">O- is the universal donor, while AB+ can receive from everyone. Knowing who is nearby — and ready — can change the outcome for a patient.</p>
+        <div class="group-legend">
+          <div><span class="group-dot group-dot--o"></span><strong>O-</strong> Universal red-cell donor</div>
+          <div><span class="group-dot group-dot--ab"></span><strong>AB+</strong> Universal red-cell recipient</div>
+          <div><span class="group-dot group-dot--rare"></span><strong>Rare groups</strong> AB-, B-, A- need extra donors</div>
+        </div>
+        <a class="btn btn-outline-red" href="{{ url_for('main.find_donors', compatible='1') }}">Search compatible donors</a>
+      </div>
+      <div class="col-lg-7">
+        <div class="group-board">
+          {% for group in blood_groups %}
+            <a class="group-tile" href="{{ url_for('main.find_donors', blood_group=group) }}">
+              <div class="group-tile__top">
+                <span class="group-tile__group">{{ group }}</span>
+                <span class="group-tile__tag">{{ blood_group_rarity[group] }}</span>
+              </div>
+              <div class="group-tile__bottom">
+                <span class="group-tile__count">{{ group_counts[group] }}</span>
+                <span>registered donor{{ '' if group_counts[group] == 1 else 's' }}</span>
+              </div>
+              <span class="group-tile__arrow"><i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if featured_donors %}
+<section class="section section--donors">
+  <div class="container">
+    <div class="section-heading section-heading--row">
+      <div>
+        <span class="eyebrow">Verified community</span>
+        <h2>Meet a few of our available donors</h2>
+        <p>Every profile below has been reviewed by an administrator and is currently eligible to donate.</p>
+      </div>
+      <a class="btn btn-outline-red" href="{{ url_for('main.find_donors') }}">View all donors</a>
+    </div>
+    <div class="row g-4">
+      {% for donor in featured_donors %}
+        <div class="col-md-6 col-lg-4">{{ donor_card(donor, current_user) }}</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section section--safety">
+  <div class="container">
+    <div class="safety-card">
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-6">
+          <span class="eyebrow eyebrow--light">Privacy by design</span>
+          <h2>Your number is yours. Contact is shared only when you say yes.</h2>
+          <p>Donors control contact sharing from their profile. Receivers only see a donor's phone number after the donor accepts a request, and only if the donor has opted in. Administrators can review reports and act quickly.</p>
+          <ul class="check-list check-list--light">
+            <li><i class="fa-solid fa-circle-check"></i> Passwords hashed with Werkzeug</li>
+            <li><i class="fa-solid fa-circle-check"></i> Role-based access to every dashboard</li>
+            <li><i class="fa-solid fa-circle-check"></i> Report and moderation workflow</li>
+          </ul>
+        </div>
+        <div class="col-lg-6">
+          <div class="safety-stats">
+            <div><strong>90 days</strong><span>minimum safe interval between donations</span></div>
+            <div><strong>18–65</strong><span>eligible donor age range</span></div>
+            <div><strong>50 kg</strong><span>minimum donor weight</span></div>
+            <div><strong>100%</strong><span>free to search and request</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-banner">
+      <div class="cta-banner__content">
+        <span class="eyebrow eyebrow--light">Ready when you are</span>
+        <h2>One donation can support up to three patients.</h2>
+        <p>Join a verified network of donors, or create a receiver account to find the blood group you need.</p>
+      </div>
+      <div class="cta-banner__actions">
+        <a class="btn btn-white btn-lg" href="{{ url_for('auth.register_donor') }}">Become a donor</a>
+        <a class="btn btn-outline-light btn-lg" href="{{ url_for('auth.register_receiver') }}">I need blood</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

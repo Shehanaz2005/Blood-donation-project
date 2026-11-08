@@ -1,0 +1,72 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import render_pagination, status_badge, urgency_badge, empty_state %}
+
+{% block title %}Manage Blood Requests — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · operations</span>{% endblock %}
+{% block page_title %}Blood requests{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Monitor, resolve and audit every request on the platform.</p>{% endblock %}
+
+{% block dashboard_content %}
+<form class="admin-filter panel" method="get" action="{{ url_for('admin.requests_list') }}">
+  <div class="panel__body">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-4">
+        <label class="form-label" for="requestSearch">Search</label>
+        <input class="form-control" id="requestSearch" name="q" value="{{ q }}" placeholder="Reference, hospital or city">
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label" for="requestStatus">Status</label>
+        <select class="form-select" id="requestStatus" name="status">
+          <option value="all" {{ 'selected' if status == 'all' else '' }}>All statuses</option>
+          {% for key in ['pending', 'accepted', 'completed', 'rejected', 'cancelled', 'expired'] %}
+            <option value="{{ key }}" {{ 'selected' if status == key else '' }}>{{ status_meta[key].label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label" for="requestUrgency">Urgency</label>
+        <select class="form-select" id="requestUrgency" name="urgency">
+          <option value="all" {{ 'selected' if urgency == 'all' else '' }}>All</option>
+          <option value="routine" {{ 'selected' if urgency == 'routine' else '' }}>Routine</option>
+          <option value="urgent" {{ 'selected' if urgency == 'urgent' else '' }}>Urgent</option>
+          <option value="critical" {{ 'selected' if urgency == 'critical' else '' }}>Critical</option>
+        </select>
+      </div>
+      <div class="col-lg-2 d-flex gap-2">
+        <button class="btn btn-red w-100" type="submit">Apply</button>
+        <a class="btn btn-light-soft" href="{{ url_for('admin.requests_list') }}" aria-label="Clear filters"><i class="fa-solid fa-xmark"></i></a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="panel mt-4">
+  <div class="panel__head">
+    <div><h2>Request queue</h2><p>{{ pagination.total }} request{{ '' if pagination.total == 1 else 's' }} match this view.</p></div>
+  </div>
+  <div class="table-responsive">
+    <table class="table app-table app-table--admin align-middle">
+      <thead><tr><th>Reference</th><th>Receiver</th><th>Donor</th><th>Blood</th><th>Hospital</th><th>Urgency</th><th>Status</th><th>Created</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for item in pagination.items %}
+          <tr>
+            <td><span class="mono">{{ item.reference }}</span></td>
+            <td><strong>{{ item.receiver.full_name }}</strong><small class="d-block text-muted">{{ item.receiver.email }}</small></td>
+            <td><strong>{{ item.donor.full_name }}</strong><small class="d-block text-muted">{{ item.donor.phone or 'No phone' }}</small></td>
+            <td><span class="blood-badge">{{ item.blood_group }}</span> <small class="text-muted">×{{ item.units }}</small></td>
+            <td>{{ item.hospital_name }}<small class="d-block text-muted">{{ item.city }}</small></td>
+            <td>{{ urgency_badge(item.urgency) }}</td>
+            <td>{{ status_badge(item.status) }}</td>
+            <td class="text-muted">{{ item.created_at|timeago }}</td>
+            <td class="text-end"><a class="btn btn-sm btn-light-soft" href="{{ url_for('admin.request_detail', request_id=item.id) }}">View</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="9">{{ empty_state('list-check', 'No requests found', 'Try a different status, urgency or search term.') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination) }}
+{% endblock %}

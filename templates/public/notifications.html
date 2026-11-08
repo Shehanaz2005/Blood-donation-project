@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import empty_state, render_pagination %}
+
+{% block title %}Notifications{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container container--narrow">
+    <div class="page-title-row">
+      <div>
+        <span class="eyebrow">Your activity</span>
+        <h1>Notifications</h1>
+        <p>Requests, verification updates, account changes and report outcomes all appear here.</p>
+      </div>
+      {% if unread_notifications %}
+        <form method="post" action="{{ url_for('main.read_all_notifications') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-outline-red" type="submit"><i class="fa-solid fa-check-double"></i> Mark all read</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="notification-page">
+      {% for note in pagination.items %}
+        <form method="post" action="{{ url_for('main.read_notification', notification_id=note.id) }}" class="notification-row-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="notification-row {{ 'is-unread' if not note.is_read else '' }}">
+            <span class="notification-icon tone-{{ note.tone }}"><i class="fa-solid fa-{{ note.icon }}"></i></span>
+            <span class="notification-row__body">
+              <span class="notification-row__top">
+                <strong>{{ note.title }}</strong>
+                {% if not note.is_read %}<span class="unread-chip">New</span>{% endif %}
+              </span>
+              <span class="notification-row__message">{{ note.message }}</span>
+              <span class="notification-row__meta">{{ note.created_at|timeago }} · {{ note.category|capitalize }}</span>
+            </span>
+            <i class="fa-solid fa-chevron-right notification-row__arrow"></i>
+          </button>
+        </form>
+      {% else %}
+        {{ empty_state('bell-slash', 'No notifications yet', 'When a donor responds, an admin verifies your profile, or a report is reviewed, you will see it here.', url_for('main.home'), 'Back to home') }}
+      {% endfor %}
+    </div>
+
+    {{ render_pagination(pagination) }}
+  </div>
+</section>
+{% endblock %}

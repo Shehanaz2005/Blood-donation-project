@@ -1,0 +1,164 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import status_badge, urgency_badge %}
+
+{% block title %}Request {{ blood_request.reference }} — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Incoming request</span>{% endblock %}
+{% block page_title %}Request details{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Reference <span class="mono">{{ blood_request.reference }}</span></p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('donor.requests_list') }}"><i class="fa-solid fa-arrow-left"></i> Back to requests</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="request-detail-head">
+  <div class="request-detail-head__main">
+    <span class="blood-badge blood-badge--xl">{{ blood_request.blood_group }}</span>
+    <div>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        {{ status_badge(blood_request.status) }}
+        {{ urgency_badge(blood_request.urgency) }}
+        {% if blood_request.is_overdue %}<span class="status-badge status-expired"><i class="fa-solid fa-clock"></i> Overdue</span>{% endif %}
+      </div>
+      <h2>{{ blood_request.units }} unit{{ '' if blood_request.units == 1 else 's' }} of {{ blood_request.blood_group }} blood</h2>
+      <p>{{ blood_request.hospital_name }} · {{ blood_request.city }}</p>
+    </div>
+  </div>
+  <div class="request-detail-head__meta">
+    <div><span>Needed by</span><strong>{{ blood_request.needed_by|d if blood_request.needed_by else 'As soon as possible' }}</strong></div>
+    <div><span>Received</span><strong>{{ blood_request.created_at|dt('%d %b, %I:%M %p') }}</strong></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="panel">
+      <div class="panel__head"><h2>Request information</h2></div>
+      <div class="panel__body">
+        <div class="detail-grid">
+          <div class="detail-item"><span>Hospital</span><strong>{{ blood_request.hospital_name }}</strong></div>
+          <div class="detail-item"><span>Hospital address</span><strong>{{ blood_request.hospital_address or 'Not provided' }}</strong></div>
+          <div class="detail-item"><span>City</span><strong>{{ blood_request.city }}</strong></div>
+          <div class="detail-item"><span>Units</span><strong>{{ blood_request.units }}</strong></div>
+          <div class="detail-item"><span>Urgency</span><strong>{{ urgency_meta[blood_request.urgency].label }}</strong></div>
+          <div class="detail-item"><span>Blood group</span><strong>{{ blood_request.blood_group }}</strong></div>
+        </div>
+
+        <div class="message-box mt-4">
+          <span>Message from {{ blood_request.receiver.full_name }}</span>
+          <p>{{ blood_request.message or 'No additional message was provided.' }}</p>
+        </div>
+
+        {% if blood_request.donor_response %}
+          <div class="message-box message-box--response mt-3">
+            <span>Your response</span>
+            <p>{{ blood_request.donor_response }}</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if blood_request.is_pending %}
+      <div class="panel mt-4">
+        <div class="panel__head">
+          <div><h2>Your decision</h2><p>Only accept if you can genuinely donate and have confirmed the details.</p></div>
+        </div>
+        <div class="panel__body">
+          {% if not profile.is_verified %}
+            <div class="callout callout--warning">
+              <i class="fa-solid fa-user-shield"></i>
+              <div><strong>Verification required</strong><p>An administrator must verify your profile before you can accept requests. You can still decline this request.</p></div>
+            </div>
+          {% elif not profile.is_available %}
+            <div class="callout callout--warning">
+              <i class="fa-solid fa-circle-pause"></i>
+              <div><strong>You are marked unavailable</strong><p>Switch your availability on from the dashboard to accept this request.</p></div>
+            </div>
+          {% elif not profile.is_eligible %}
+            <div class="callout callout--warning">
+              <i class="fa-solid fa-hourglass-half"></i>
+              <div><strong>Not eligible right now</strong><p>{{ profile.eligibility_reasons[-1] }}</p></div>
+            </div>
+          {% endif %}
+
+          <form method="post" action="{{ url_for('donor.respond', request_id=blood_request.id) }}" class="needs-validation" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+              <label class="form-label" for="responseNote">Note to receiver (optional)</label>
+              <textarea class="form-control" id="responseNote" name="note" rows="3" maxlength="1000"
+                        placeholder="e.g. I can be at the hospital by 4pm. Please confirm the ward."></textarea>
+              <div class="form-text">This note is shared with the receiver. Do not include sensitive medical details.</div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button class="btn btn-red" type="submit" name="action" value="accept"
+                      {{ 'disabled' if not profile.can_accept_requests else '' }}>
+                <i class="fa-solid fa-hand-holding-medical"></i> Accept request
+              </button>
+              <button class="btn btn-outline-red" type="submit" name="action" value="reject">
+                <i class="fa-solid fa-circle-xmark"></i> Decline
+              </button>
+            </div>
+            {% if not profile.can_accept_requests %}
+              <p class="form-hint mt-2">Accept is disabled until you are verified, available and eligible.</p>
+            {% endif %}
+          </form>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel">
+      <div class="panel__head"><h2>Receiver</h2></div>
+      <div class="panel__body">
+        <div class="person-card">
+          <span class="avatar">{{ blood_request.receiver.initials }}</span>
+          <div><strong>{{ blood_request.receiver.full_name }}</strong><small>{{ (blood_request.receiver.receiver_profile.city if blood_request.receiver.receiver_profile else None) or 'City not set' }} · Receiver</small></div>
+        </div>
+        <div class="detail-grid detail-grid--two mt-3">
+          <div class="detail-item"><span>Patient relation</span><strong>{{ blood_request.receiver.receiver_profile.patient_relation if blood_request.receiver.receiver_profile else '—' }}</strong></div>
+          <div class="detail-item"><span>Requests made</span><strong>{{ blood_request.receiver.requests_made.count() }}</strong></div>
+        </div>
+
+        {% if blood_request.status in ('accepted', 'completed') %}
+          <div class="contact-box mt-3">
+            <div class="contact-box__icon"><i class="fa-solid fa-phone"></i></div>
+            <div><span>Receiver phone</span><strong>{{ blood_request.contact_phone }}</strong><small>Coordinate the donation directly.</small></div>
+          </div>
+          {% if profile.share_contact %}
+            <p class="privacy-note"><i class="fa-solid fa-shield-halved"></i> The receiver can now see your phone number because you accepted and enabled contact sharing.</p>
+          {% else %}
+            <p class="privacy-note"><i class="fa-solid fa-user-lock"></i> Your phone number remains private. The receiver can contact you through request updates.</p>
+          {% endif %}
+        {% else %}
+          <div class="contact-locked mt-3">
+            <span class="contact-locked__icon"><i class="fa-solid fa-lock"></i></span>
+            <div><h3>Contact hidden</h3><p>The receiver's phone number becomes visible after you accept the request.</p></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Timeline</h2></div>
+      <div class="panel__body">
+        <div class="mini-timeline">
+          {% for event in blood_request.timeline %}
+            <div class="mini-timeline__item is-done">
+              <span><i class="fa-solid fa-{{ event.icon }}"></i></span>
+              <div><strong>{{ event.label }}</strong><small>{{ event.at|dt('%d %b %Y, %I:%M %p') }}</small></div>
+            </div>
+          {% endfor %}
+          {% if blood_request.is_pending %}
+            <div class="mini-timeline__item"><span><i class="fa-solid fa-hourglass-half"></i></span><div><strong>Awaiting your response</strong><small>Accept or decline above</small></div></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout--warning mt-4">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div><strong>Before you donate</strong><p>Eat well, hydrate, and bring valid ID. Tell the hospital team about any medication or recent illness. Never donate under pressure.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

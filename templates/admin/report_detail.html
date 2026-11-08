@@ -1,0 +1,87 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/forms.html" import render_field %}
+
+{% block title %}Admin · Report #{{ report.id }}{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · moderation</span>{% endblock %}
+{% block page_title %}Report #{{ report.id }}{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Submitted {{ report.created_at|dt('%d %b %Y, %I:%M %p') }}</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('admin.reports') }}"><i class="fa-solid fa-arrow-left"></i> Back to reports</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="panel">
+      <div class="panel__head">
+        <div><h2>{{ report.reason }}</h2><p>Reported by {{ report.reporter.full_name }}</p></div>
+        <span class="mini-badge mini-badge--{{ 'warning' if report.status == 'open' else ('info' if report.status == 'reviewing' else ('success' if report.status == 'resolved' else 'muted')) }}">
+          {{ report_status_meta[report.status].label }}
+        </span>
+      </div>
+      <div class="panel__body">
+        <div class="message-box">
+          <span>Reporter description</span>
+          <p>{{ report.description }}</p>
+        </div>
+
+        <div class="row g-4 mt-1">
+          <div class="col-md-6">
+            <div class="person-card">
+              <span class="avatar">{{ report.reporter.initials }}</span>
+              <div><strong>{{ report.reporter.full_name }}</strong><small>Reporter · {{ report.reporter.role|capitalize }}</small></div>
+            </div>
+            <p class="small text-muted mt-2"><i class="fa-solid fa-envelope"></i> {{ report.reporter.email }}</p>
+          </div>
+          <div class="col-md-6">
+            <div class="person-card">
+              <span class="avatar avatar--warning">{{ report.reported_user.initials }}</span>
+              <div><strong>{{ report.reported_user.full_name }}</strong><small>Reported · {{ report.reported_user.role|capitalize }}</small></div>
+            </div>
+            <p class="small text-muted mt-2"><i class="fa-solid fa-envelope"></i> {{ report.reported_user.email }}</p>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap mt-4">
+          {% if report.status == 'open' %}
+            <form method="post" action="{{ url_for('admin.review_report', report_id=report.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-outline-red" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Mark under review</button>
+            </form>
+          {% endif %}
+          <a class="btn btn-light-soft" href="{{ url_for('admin.users', q=report.reported_user.email) }}"><i class="fa-solid fa-user-gear"></i> Manage reported account</a>
+          {% if report.reported_user.donor_profile %}
+            <a class="btn btn-light-soft" href="{{ url_for('main.donor_profile', donor_id=report.reported_user.donor_profile.id) }}"><i class="fa-solid fa-eye"></i> View donor profile</a>
+          {% endif %}
+        </div>
+
+        {% if report.admin_note %}
+          <div class="callout callout--info mt-4">
+            <i class="fa-solid fa-clipboard-check"></i>
+            <div><strong>Previous decision</strong><p>{{ report.admin_note }}</p><small>By {{ report.resolved_by.full_name if report.resolved_by else 'Administrator' }} · {{ report.resolved_at|dt('%d %b %Y, %I:%M %p') if report.resolved_at else '' }}</small></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <form method="post" action="{{ url_for('admin.resolve_report', report_id=report.id) }}" class="panel needs-validation" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="panel__head"><h2>Record a decision</h2></div>
+      <div class="panel__body">
+        <p class="text-muted small">The reporter receives a notification. The internal note is only visible to administrators.</p>
+        {{ render_field(form.status) }}
+        {{ render_field(form.admin_note) }}
+        {{ form.submit(class_='btn btn-red w-100') }}
+        <p class="form-hint mt-2">If the report warrants account action, use the “Manage reported account” button after saving your decision.</p>
+      </div>
+    </form>
+
+    <div class="callout callout--warning mt-4">
+      <i class="fa-solid fa-scale-balanced"></i>
+      <div><strong>Moderation principles</strong><p>Review evidence, avoid sharing reporter identity with the reported user, and document the rationale. Disable accounts only for clear policy violations.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

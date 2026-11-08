@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "macros/forms.html" import render_field %}
+
+{% block title %}Report {{ target.full_name }}{% endblock %}
+
+{% block content %}
+<section class="section section--report">
+  <div class="container">
+    <div class="row justify-content-center g-4">
+      <div class="col-lg-7">
+        <a class="back-link" href="{{ request.referrer or url_for('main.home') }}"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <span class="eyebrow">Trust &amp; safety</span>
+              <h1>Report a concern</h1>
+            </div>
+            <span class="panel__icon panel__icon--amber"><i class="fa-solid fa-flag"></i></span>
+          </div>
+          <div class="panel__body">
+            <div class="reported-user">
+              <span class="avatar">{{ target.initials }}</span>
+              <div>
+                <span>Reporting</span>
+                <strong>{{ target.full_name }}</strong>
+                <small>{{ target.role|capitalize }}{% if target.donor_profile %} · {{ target.donor_profile.blood_group }} · {{ target.donor_profile.city }}{% elif target.receiver_profile %} · {{ target.receiver_profile.city }}{% endif %}</small>
+              </div>
+            </div>
+
+            {% if existing %}
+              <div class="callout callout--info">
+                <i class="fa-solid fa-circle-info"></i>
+                <div><strong>You already have an open report.</strong><p>An administrator is reviewing your earlier report about this user. You can still add another report if the situation has changed significantly.</p></div>
+              </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+              {{ form.hidden_tag() }}
+              {{ render_field(form.reason) }}
+              {{ render_field(form.description) }}
+              <div class="callout callout--warning">
+                <i class="fa-solid fa-lock"></i>
+                <div><strong>Give us useful context.</strong><p>Include dates, what happened and whether a request reference is involved. Do not share passwords, medical records or bank details. Administrators may contact you for follow-up.</p></div>
+              </div>
+              <div class="d-flex gap-2 flex-wrap mt-4">
+                {{ form.submit(class_='btn btn-red') }}
+                <a class="btn btn-light-soft" href="{{ url_for('main.home') }}">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="panel">
+          <div class="panel__head"><h2>What happens next?</h2></div>
+          <div class="panel__body">
+            <div class="mini-timeline">
+              <div class="mini-timeline__item is-done"><span><i class="fa-solid fa-paper-plane"></i></span><div><strong>You submit the report</strong><small>It enters the admin queue</small></div></div>
+              <div class="mini-timeline__item"><span><i class="fa-solid fa-magnifying-glass"></i></span><div><strong>An admin reviews it</strong><small>Status changes to “reviewing”</small></div></div>
+              <div class="mini-timeline__item"><span><i class="fa-solid fa-scale-balanced"></i></span><div><strong>A decision is recorded</strong><small>Resolved or dismissed with a note</small></div></div>
+              <div class="mini-timeline__item"><span><i class="fa-regular fa-bell"></i></span><div><strong>You get a notification</strong><small>No personal details are exposed</small></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout--danger mt-4">
+          <i class="fa-solid fa-truck-medical"></i>
+          <div><strong>Immediate danger?</strong><p>Contact local emergency services or the hospital directly. Reports on this platform are reviewed during normal admin operations.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

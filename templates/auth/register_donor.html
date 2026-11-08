@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "macros/forms.html" import render_field, password_field %}
+
+{% block title %}Become a Blood Donor — Blood Connect{% endblock %}
+{% block meta_description %}Register as a blood donor, choose your blood group and city, and control your availability. Admin verification keeps the network trustworthy.{% endblock %}
+
+{% block content %}
+<section class="auth-page auth-page--wide">
+  <div class="container">
+    <div class="auth-grid">
+      {% set aside_eyebrow = 'Become a donor' %}
+      {% set aside_title = 'Your blood group could be exactly what someone is waiting for.' %}
+      {% set aside_text = 'Register once, then control when you are available. You decide which requests to accept — and whether to share your phone number.' %}
+      {% set aside_points = ['Free to register and use, always', 'Admin-verified profiles build receiver trust', 'Automatic 90-day safety cooldown', 'Contact shared only with your consent'] %}
+      {% include "components/auth_aside.html" %}
+
+      <div class="auth-card auth-card--form">
+        <div class="auth-card__head">
+          <span class="eyebrow">Donor registration</span>
+          <h1>Become a blood donor</h1>
+          <p>It takes about two minutes. Your profile will be reviewed by an administrator before you can accept requests.</p>
+        </div>
+
+        <form method="post" class="needs-validation" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="form-section">
+            <div class="form-section__head"><span>01</span><div><h2>Account details</h2><p>How you sign in and how we reach you.</p></div></div>
+            <div class="row g-3">
+              <div class="col-md-6">{{ render_field(form.full_name, wrapper_class='mb-3') }}</div>
+              <div class="col-md-6">{{ render_field(form.email, wrapper_class='mb-3') }}</div>
+              <div class="col-md-6">{{ render_field(form.phone, wrapper_class='mb-3') }}</div>
+              <div class="col-md-6">{{ render_field(form.city, wrapper_class='mb-3') }}</div>
+              <div class="col-md-6">{{ password_field(form.password) }}</div>
+              <div class="col-md-6">{{ password_field(form.confirm_password) }}</div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section__head"><span>02</span><div><h2>Medical &amp; eligibility</h2><p>Basic checks help keep donations safe.</p></div></div>
+            <div class="row g-3">
+              <div class="col-md-4">{{ render_field(form.blood_group) }}</div>
+              <div class="col-md-4">{{ render_field(form.date_of_birth) }}</div>
+              <div class="col-md-4">{{ render_field(form.gender) }}</div>
+              <div class="col-md-4">{{ render_field(form.weight_kg) }}</div>
+              <div class="col-md-4">{{ render_field(form.last_donation_date) }}</div>
+              <div class="col-md-8">{{ render_field(form.address) }}</div>
+            </div>
+            <div class="callout callout--info">
+              <i class="fa-solid fa-circle-info"></i>
+              <div><strong>Eligibility basics</strong><p>Donors must be 18–65 years old, weigh at least 50 kg, and wait 90 days between donations. If you donated recently, we'll automatically show your next eligible date.</p></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section__head"><span>03</span><div><h2>Privacy &amp; consent</h2><p>You stay in control of your contact information.</p></div></div>
+            {{ render_field(form.share_contact) }}
+            {{ render_field(form.terms) }}
+            <p class="form-hint mt-2">By creating an account you agree to use the platform responsibly. Blood Connect does not buy or sell blood, and donations must always be voluntary.</p>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            {{ form.submit(class_='btn btn-red btn-lg') }}
+            <a class="btn btn-light-soft btn-lg" href="{{ url_for('auth.login') }}">I already have an account</a>
+          </div>
+        </form>
+
+        <div class="auth-card__foot">
+          <p>Need blood instead?</p>
+          <a class="subtle-link" href="{{ url_for('auth.register_receiver') }}"><i class="fa-solid fa-hand-holding-medical"></i> Create a receiver account</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

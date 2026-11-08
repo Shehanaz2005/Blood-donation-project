@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "macros/forms.html" import render_field, password_field %}
+
+{% block title %}Sign in — Blood Connect{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="container">
+    <div class="auth-grid">
+      {% set aside_eyebrow = 'Welcome back' %}
+      {% set aside_title = 'Good to see you again.' %}
+      {% set aside_text = 'Sign in to check requests, update your availability, or search for verified donors near you.' %}
+      {% include "components/auth_aside.html" %}
+
+      <div class="auth-card">
+        <div class="auth-card__head">
+          <span class="eyebrow">Sign in</span>
+          <h1>Welcome back</h1>
+          <p>Enter the email and password you registered with.</p>
+        </div>
+
+        <form method="post" class="needs-validation" novalidate>
+          {{ form.hidden_tag() }}
+          {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+
+          {{ render_field(form.email, wrapper_class='mb-3') }}
+          {{ password_field(form.password) }}
+
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+            {{ render_field(form.remember, wrapper_class='form-check mb-0') }}
+            <span class="form-hint">Forgot your password? Contact support.</span>
+          </div>
+
+          {{ form.submit(class_='btn btn-red btn-lg w-100') }}
+        </form>
+
+        <div class="auth-card__foot">
+          <p>New to Blood Connect?</p>
+          <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-red btn-sm" href="{{ url_for('auth.register_donor') }}">Register as donor</a>
+            <a class="btn btn-light-soft btn-sm" href="{{ url_for('auth.register_receiver') }}">Register as receiver</a>
+          </div>
+          <hr>
+          <a class="subtle-link" href="{{ url_for('auth.admin_login') }}"><i class="fa-solid fa-user-shield"></i> Administrator sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<div class="dashboard-shell">
+  <div class="container">
+    <div class="dashboard-grid">
+      <aside class="dash-sidebar">
+        <div class="dash-user">
+          <span class="avatar">{{ current_user.initials }}</span>
+          <div>
+            <strong>{{ current_user.full_name }}</strong>
+            <span>{{ current_user.role|capitalize }} account</span>
+          </div>
+        </div>
+
+        <nav class="dash-nav" aria-label="Dashboard navigation">
+          {% if current_user.is_donor %}
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'donor.dashboard' else '' }}" href="{{ url_for('donor.dashboard') }}">
+              <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint in ('donor.requests_list', 'donor.request_detail') else '' }}" href="{{ url_for('donor.requests_list') }}">
+              <i class="fa-solid fa-inbox"></i><span>Incoming requests</span>
+              {% set pending_total = current_user.requests_received.filter_by(status='pending').count() %}
+              {% if pending_total %}<span class="dash-nav__count">{{ pending_total }}</span>{% endif %}
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'donor.profile_edit' else '' }}" href="{{ url_for('donor.profile_edit') }}">
+              <i class="fa-regular fa-user"></i><span>My profile</span>
+            </a>
+            <a class="dash-nav__link" href="{{ url_for('main.find_donors') }}">
+              <i class="fa-solid fa-magnifying-glass"></i><span>Donor directory</span>
+            </a>
+          {% elif current_user.is_receiver %}
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'receiver.dashboard' else '' }}" href="{{ url_for('receiver.dashboard') }}">
+              <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'main.find_donors' else '' }}" href="{{ url_for('main.find_donors') }}">
+              <i class="fa-solid fa-magnifying-glass"></i><span>Find donors</span>
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint in ('receiver.requests_list', 'receiver.request_detail', 'receiver.new_request') else '' }}" href="{{ url_for('receiver.requests_list') }}">
+              <i class="fa-solid fa-inbox"></i><span>My requests</span>
+              {% set active_total = current_user.requests_made.filter_by(status='pending').count() + current_user.requests_made.filter_by(status='accepted').count() %}
+              {% if active_total %}<span class="dash-nav__count">{{ active_total }}</span>{% endif %}
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'receiver.profile_edit' else '' }}" href="{{ url_for('receiver.profile_edit') }}">
+              <i class="fa-regular fa-user"></i><span>My profile</span>
+            </a>
+          {% elif current_user.is_admin %}
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'admin.dashboard' else '' }}" href="{{ url_for('admin.dashboard') }}">
+              <i class="fa-solid fa-gauge-high"></i><span>Overview</span>
+            </a>
+            <span class="dash-nav__label">People</span>
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'admin.donors' else '' }}" href="{{ url_for('admin.donors') }}">
+              <i class="fa-solid fa-droplet"></i><span>Donors</span>
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'admin.receivers' else '' }}" href="{{ url_for('admin.receivers') }}">
+              <i class="fa-solid fa-hand-holding-medical"></i><span>Receivers</span>
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint == 'admin.users' else '' }}" href="{{ url_for('admin.users') }}">
+              <i class="fa-solid fa-users"></i><span>All accounts</span>
+            </a>
+            <span class="dash-nav__label">Operations</span>
+            <a class="dash-nav__link {{ 'active' if request.endpoint in ('admin.requests_list', 'admin.request_detail') else '' }}" href="{{ url_for('admin.requests_list') }}">
+              <i class="fa-solid fa-list-check"></i><span>Blood requests</span>
+            </a>
+            <a class="dash-nav__link {{ 'active' if request.endpoint in ('admin.reports', 'admin.report_detail') else '' }}" href="{{ url_for('admin.reports') }}">
+              <i class="fa-solid fa-flag"></i><span>User reports</span>
+            </a>
+          {% endif %}
+
+          <span class="dash-nav__label">Account</span>
+          <a class="dash-nav__link {{ 'active' if request.endpoint == 'main.notifications' else '' }}" href="{{ url_for('main.notifications') }}">
+            <i class="fa-regular fa-bell"></i><span>Notifications</span>
+            {% if unread_notifications %}<span class="dash-nav__count">{{ unread_notifications }}</span>{% endif %}
+          </a>
+          <a class="dash-nav__link" href="{{ url_for('main.home') }}">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Public site</span>
+          </a>
+        </nav>
+
+        <div class="dash-support">
+          <i class="fa-solid fa-circle-question"></i>
+          <strong>Need a hand?</strong>
+          <p>If something looks wrong with a request or account, contact support.</p>
+          <a href="mailto:{{ config.SUPPORT_EMAIL }}">Email support</a>
+        </div>
+      </aside>
+
+      <section class="dash-main">
+        <header class="dash-topbar">
+          <div>
+            {% block page_kicker %}<span class="eyebrow">Dashboard</span>{% endblock %}
+            <h1>{% block page_title %}Overview{% endblock %}</h1>
+            {% block page_subtitle %}{% endblock %}
+          </div>
+          <div class="dash-topbar__actions">
+            {% block page_actions %}{% endblock %}
+            <div class="topbar-role">
+              <i class="fa-solid fa-{{ 'user-shield' if current_user.is_admin else ('droplet' if current_user.is_donor else 'hand-holding-medical') }}"></i>
+              <span>{{ current_user.role|capitalize }}</span>
+            </div>
+          </div>
+        </header>
+
+        {% block dashboard_content %}{% endblock %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

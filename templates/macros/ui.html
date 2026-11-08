@@ -1,0 +1,150 @@
+{% macro blood_badge(group, cls='') %}
+  <span class="blood-badge {{ cls }}">{{ group }}</span>
+{% endmacro %}
+
+{% macro avatar(name, extra_class='') %}
+  <span class="avatar {{ extra_class }}">{{ name|initials }}</span>
+{% endmacro %}
+
+{% macro status_badge(status) %}
+  {% set meta = status_meta.get(status, {}) %}
+  <span class="status-badge status-{{ status }}">
+    <i class="fa-solid fa-{{ meta.get('icon', 'circle-info') }}" aria-hidden="true"></i>
+    {{ meta.get('label', status|capitalize) }}
+  </span>
+{% endmacro %}
+
+{% macro urgency_badge(urgency) %}
+  {% set meta = urgency_meta.get(urgency, {}) %}
+  <span class="urgency-badge urgency-{{ urgency }}">{{ meta.get('label', urgency|capitalize) }}</span>
+{% endmacro %}
+
+{% macro stat_card(label, value, icon, tone='red', hint=None) %}
+  <div class="stat-card stat-card--{{ tone }}">
+    <span class="stat-card__icon"><i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i></span>
+    <div>
+      <span class="stat-card__value">{{ value }}</span>
+      <span class="stat-card__label">{{ label }}</span>
+      {% if hint %}<span class="stat-card__hint">{{ hint }}</span>{% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro empty_state(icon, title, text, action_url=None, action_label=None) %}
+  <div class="empty-state">
+    <span class="empty-state__icon"><i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i></span>
+    <h3>{{ title }}</h3>
+    <p>{{ text }}</p>
+    {% if action_url and action_label %}
+      <a class="btn btn-red" href="{{ action_url }}">{{ action_label }}</a>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro donor_card(donor, viewer=None) %}
+  <article class="donor-card">
+    <div class="donor-card__head">
+      <span class="avatar avatar--lg">{{ donor.initials }}</span>
+      <div class="donor-card__identity">
+        <h3>{{ donor.name }}</h3>
+        <p><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ donor.city }}</p>
+      </div>
+      <span class="blood-badge blood-badge--lg">{{ donor.blood_group }}</span>
+    </div>
+
+    <div class="donor-card__badges">
+      {% if donor.is_verified %}
+        <span class="mini-badge mini-badge--verified"><i class="fa-solid fa-circle-check"></i> Verified</span>
+      {% else %}
+        <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-clock"></i> Awaiting verification</span>
+      {% endif %}
+      {% if donor.is_available and donor.is_eligible %}
+        <span class="mini-badge mini-badge--available"><i class="fa-solid fa-circle"></i> Available now</span>
+      {% elif donor.is_in_cooldown %}
+        <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-hourglass-half"></i> Eligible {{ donor.next_eligible_date|d('%d %b') }}</span>
+      {% else %}
+        <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-circle"></i> Unavailable</span>
+      {% endif %}
+    </div>
+
+    {% if donor.bio %}
+      <p class="donor-card__bio">{{ donor.bio }}</p>
+    {% endif %}
+
+    <dl class="donor-card__meta">
+      <div><dt>Donations</dt><dd>{{ donor.total_donations }}</dd></div>
+      <div><dt>Level</dt><dd>{{ donor.donor_level }}</dd></div>
+      <div><dt>Member since</dt><dd>{{ donor.member_since or '—' }}</dd></div>
+    </dl>
+
+    <div class="donor-card__actions">
+      <a class="btn btn-outline-red w-100" href="{{ donor.url }}">View profile</a>
+      {% if donor.request_url %}
+        <a class="btn btn-red w-100" href="{{ donor.request_url }}">
+          <i class="fa-solid fa-droplet" aria-hidden="true"></i> Request blood
+        </a>
+      {% elif viewer and viewer.is_authenticated and viewer.is_receiver %}
+        <button class="btn btn-light-soft w-100" type="button" disabled title="This donor is not currently accepting requests">
+          Not accepting requests
+        </button>
+      {% elif not viewer or not viewer.is_authenticated %}
+        <a class="btn btn-red w-100" href="{{ donor.login_url }}">Sign in to contact</a>
+      {% endif %}
+    </div>
+  </article>
+{% endmacro %}
+
+{% macro render_pagination(pagination) %}
+  {% if pagination.pages > 1 %}
+    {% set args = request.args.to_dict() %}
+    {% set _ = args.pop('page', None) %}
+    {% set _ = args.update(request.view_args or {}) %}
+    <nav class="mt-4" aria-label="Pagination">
+      <ul class="pagination app-pagination justify-content-center flex-wrap">
+        <li class="page-item {{ 'disabled' if not pagination.has_prev else '' }}">
+          {% if pagination.has_prev %}
+            {% set _ = args.update({'page': pagination.prev_num}) %}
+            <a class="page-link" href="{{ url_for(request.endpoint, **args) }}" aria-label="Previous page">
+              <i class="fa-solid fa-chevron-left"></i>
+            </a>
+          {% else %}
+            <span class="page-link" aria-hidden="true"><i class="fa-solid fa-chevron-left"></i></span>
+          {% endif %}
+        </li>
+        {% for page_num in pagination.iter_pages(left_edge=1, left_current=1, right_current=2, right_edge=1) %}
+          {% if page_num %}
+            {% set _ = args.update({'page': page_num}) %}
+            <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+              <a class="page-link" href="{{ url_for(request.endpoint, **args) }}"
+                 {% if page_num == pagination.page %}aria-current="page"{% endif %}>{{ page_num }}</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {{ 'disabled' if not pagination.has_next else '' }}">
+          {% if pagination.has_next %}
+            {% set _ = args.update({'page': pagination.next_num}) %}
+            <a class="page-link" href="{{ url_for(request.endpoint, **args) }}" aria-label="Next page">
+              <i class="fa-solid fa-chevron-right"></i>
+            </a>
+          {% else %}
+            <span class="page-link" aria-hidden="true"><i class="fa-solid fa-chevron-right"></i></span>
+          {% endif %}
+        </li>
+      </ul>
+    </nav>
+    <p class="pagination-summary text-center">
+      Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }}–{{ [pagination.page * pagination.per_page, pagination.total]|min }}
+      of {{ pagination.total }}
+    </p>
+  {% endif %}
+{% endmacro %}
+
+{% macro section_heading(kicker, title, text=None) %}
+  <div class="section-heading">
+    {% if kicker %}<span class="eyebrow">{{ kicker }}</span>{% endif %}
+    <h2>{{ title }}</h2>
+    {% if text %}<p>{{ text }}</p>{% endif %}
+  </div>
+{% endmacro %}

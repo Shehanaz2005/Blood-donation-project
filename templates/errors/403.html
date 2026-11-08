@@ -1,0 +1,13 @@
+{% extends "errors/error_base.html" %}
+{% block title %}Access denied — Blood Connect{% endblock %}
+{% block error_code %}403{% endblock %}
+{% block error_icon %}user-lock{% endblock %}
+{% block error_title %}Access denied{% endblock %}
+{% block error_message %}You do not have permission to view this page. If you are signed in, make sure you are using the correct role dashboard.{% endblock %}
+{% block error_extra_actions %}
+  {% if current_user.is_authenticated %}
+    <a class="btn btn-light-soft" href="{{ url_for('main.notifications') }}">Notifications</a>
+  {% else %}
+    <a class="btn btn-light-soft" href="{{ url_for('auth.login') }}">Sign in</a>
+  {% endif %}
+{% endblock %}

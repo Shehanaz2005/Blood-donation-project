@@ -1,0 +1,127 @@
+{% set endpoint = request.endpoint or "" %}
+<nav class="site-nav navbar navbar-expand-lg" id="siteNavbar">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('main.home') }}" aria-label="Blood Connect home">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="" width="40" height="40">
+      <span class="brand-text">Blood<span>Connect</span></span>
+    </a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+            aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav navbar-nav-main mx-lg-auto">
+        {% for link_endpoint, label in nav_links %}
+          <li class="nav-item">
+            <a class="nav-link {{ 'active' if endpoint == link_endpoint else '' }}"
+               href="{{ url_for(link_endpoint) }}"
+               {% if endpoint == link_endpoint %}aria-current="page"{% endif %}>{{ label }}</a>
+          </li>
+        {% endfor %}
+        {% if current_user.is_authenticated %}
+          <li class="nav-item d-lg-none">
+            <a class="nav-link" href="{{ url_for('main.notifications') }}">Notifications
+              {% if unread_notifications %}<span class="badge text-bg-danger ms-1">{{ unread_notifications }}</span>{% endif %}
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+
+      <div class="nav-auth d-flex align-items-center gap-2">
+        {% if current_user.is_authenticated %}
+          <div class="dropdown">
+            <button class="icon-btn notification-btn" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false" aria-label="Notifications">
+              <i class="fa-regular fa-bell" aria-hidden="true"></i>
+              {% if unread_notifications %}<span class="notification-dot">{{ unread_notifications if unread_notifications < 10 else '9+' }}</span>{% endif %}
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notification-menu shadow-lg">
+              <div class="notification-menu__head">
+                <span>Notifications</span>
+                {% if unread_notifications %}
+                  <form method="post" action="{{ url_for('main.read_all_notifications') }}" class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="link-btn" type="submit">Mark all read</button>
+                  </form>
+                {% endif %}
+              </div>
+              <div class="notification-menu__list">
+                {% for note in recent_notifications %}
+                  <form method="post" action="{{ url_for('main.read_notification', notification_id=note.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="notification-item {{ 'is-unread' if not note.is_read else '' }}">
+                      <span class="notification-icon tone-{{ note.tone }}"><i class="fa-solid fa-{{ note.icon }}"></i></span>
+                      <span class="notification-body">
+                        <strong>{{ note.title }}</strong>
+                        <small>{{ note.message|truncate(72) }}</small>
+                        <em>{{ note.created_at|timeago }}</em>
+                      </span>
+                    </button>
+                  </form>
+                {% else %}
+                  <div class="notification-empty">
+                    <i class="fa-regular fa-bell-slash"></i>
+                    <p>You're all caught up.</p>
+                  </div>
+                {% endfor %}
+              </div>
+              <a class="notification-menu__foot" href="{{ url_for('main.notifications') }}">View all notifications</a>
+            </div>
+          </div>
+
+          <div class="dropdown">
+            <button class="user-menu" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar avatar--sm">{{ current_user.initials }}</span>
+              <span class="user-menu__text d-none d-xl-flex">
+                <strong>{{ current_user.display_name }}</strong>
+                <small>{{ current_user.role|capitalize }}</small>
+              </span>
+              <i class="fa-solid fa-chevron-down user-menu__caret" aria-hidden="true"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end user-dropdown shadow-lg">
+              <li class="dropdown-header">
+                <strong>{{ current_user.full_name }}</strong>
+                <small>{{ current_user.email }}</small>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              {% if current_user.is_admin %}
+                <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-gauge-high"></i> Admin dashboard</a></li>
+              {% elif current_user.is_donor %}
+                <li><a class="dropdown-item" href="{{ url_for('donor.dashboard') }}"><i class="fa-solid fa-gauge-high"></i> Donor dashboard</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('donor.profile_edit') }}"><i class="fa-regular fa-user"></i> My profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('donor.requests_list') }}"><i class="fa-solid fa-inbox"></i> My requests</a></li>
+              {% elif current_user.is_receiver %}
+                <li><a class="dropdown-item" href="{{ url_for('receiver.dashboard') }}"><i class="fa-solid fa-gauge-high"></i> Receiver dashboard</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('receiver.profile_edit') }}"><i class="fa-regular fa-user"></i> My profile</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('receiver.requests_list') }}"><i class="fa-solid fa-inbox"></i> My requests</a></li>
+              {% endif %}
+              <li><a class="dropdown-item" href="{{ url_for('main.notifications') }}"><i class="fa-regular fa-bell"></i> Notifications</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form method="post" action="{{ url_for('auth.logout') }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="dropdown-item text-danger" type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        {% else %}
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.login') }}">Login</a>
+          <div class="dropdown">
+            <button class="btn btn-red btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Get started
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+              <li><a class="dropdown-item" href="{{ url_for('auth.register_donor') }}"><i class="fa-solid fa-droplet"></i> Register as a donor</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('auth.register_receiver') }}"><i class="fa-solid fa-hand-holding-medical"></i> Register as a receiver</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('auth.admin_login') }}"><i class="fa-solid fa-user-shield"></i> Admin login</a></li>
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>

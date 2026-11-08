@@ -1,0 +1,19 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-stack container" aria-live="polite">
+      {% for category, message in messages %}
+        {% set icon = {
+          'success': 'circle-check',
+          'danger': 'circle-exclamation',
+          'warning': 'triangle-exclamation',
+          'info': 'circle-info'
+        }.get(category, 'circle-info') %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show app-alert" role="alert">
+          <i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i>
+          <span>{{ message }}</span>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

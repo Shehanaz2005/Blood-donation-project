@@ -1,0 +1,9 @@
+{% extends "errors/error_base.html" %}
+{% block title %}Bad request — Blood Connect{% endblock %}
+{% block error_code %}400{% endblock %}
+{% block error_icon %}circle-exclamation{% endblock %}
+{% block error_title %}{{ title or 'Bad request' }}{% endblock %}
+{% block error_message %}{{ message or 'The request could not be processed. Please check your details and try again.' }}{% endblock %}
+{% block error_extra_actions %}
+  <a class="btn btn-light-soft" href="{{ url_for('auth.login') }}">Sign in</a>
+{% endblock %}

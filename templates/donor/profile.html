@@ -1,0 +1,120 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/forms.html" import render_field, password_field %}
+
+{% block title %}My Donor Profile — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Donor account</span>{% endblock %}
+{% block page_title %}My profile{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Keep your details accurate — receivers rely on them.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('main.donor_profile', donor_id=profile.id) }}"><i class="fa-solid fa-arrow-up-right-from-square"></i> View public profile</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+  <div class="col-xl-8">
+    <form method="post" class="panel needs-validation" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="panel__head">
+        <div><h2>Profile details</h2><p>Fields marked with a red asterisk are required for verification.</p></div>
+        <span class="mini-badge {{ 'mini-badge--verified' if profile.is_verified else 'mini-badge--muted' }}">
+          <i class="fa-solid fa-{{ 'circle-check' if profile.is_verified else 'clock' }}"></i>
+          {{ 'Verified' if profile.is_verified else 'Pending verification' }}
+        </span>
+      </div>
+      <div class="panel__body">
+        <div class="form-section form-section--flush">
+          <div class="form-section__head"><span>01</span><div><h2>Identity &amp; account</h2><p>How receivers see you and how we notify you.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-6">{{ render_field(form.full_name) }}</div>
+            <div class="col-md-6">{{ render_field(form.email) }}</div>
+            <div class="col-md-6">{{ render_field(form.phone) }}</div>
+            <div class="col-md-6">{{ render_field(form.city) }}</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section__head"><span>02</span><div><h2>Medical profile</h2><p>This drives search filters and eligibility checks.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-4">{{ render_field(form.blood_group) }}</div>
+            <div class="col-md-4">{{ render_field(form.date_of_birth) }}</div>
+            <div class="col-md-4">{{ render_field(form.gender) }}</div>
+            <div class="col-md-4">{{ render_field(form.weight_kg) }}</div>
+            <div class="col-md-4">{{ render_field(form.last_donation_date) }}</div>
+            <div class="col-md-4">{{ render_field(form.address) }}</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section__head"><span>03</span><div><h2>About &amp; privacy</h2><p>A short bio and your contact preference.</p></div></div>
+          {{ render_field(form.bio) }}
+          {{ render_field(form.share_contact) }}
+          <div class="callout callout--info">
+            <i class="fa-solid fa-user-lock"></i>
+            <div><strong>Contact sharing is always your choice</strong><p>When enabled, a receiver sees your phone number only after you accept their request. Turning this off keeps your number private — receivers can still coordinate through request updates.</p></div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+          {{ form.submit(class_='btn btn-red') }}
+          <a class="btn btn-light-soft" href="{{ url_for('donor.dashboard') }}">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel">
+      <div class="panel__head"><h2>Verification status</h2></div>
+      <div class="panel__body">
+        <div class="verification-status {{ 'is-verified' if profile.is_verified else 'is-pending' }}">
+          <span class="verification-status__icon"><i class="fa-solid fa-{{ 'shield-check' if profile.is_verified else 'hourglass-half' }}"></i></span>
+          <strong>{{ 'Profile verified' if profile.is_verified else 'Awaiting admin review' }}</strong>
+          <p>
+            {% if profile.is_verified %}
+              Verified {{ profile.verified_at|d }}. Receivers can trust your profile and send requests.
+            {% else %}
+              An administrator will review your profile. Complete every section to speed this up. You cannot accept requests until verified.
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="detail-grid detail-grid--two mt-4">
+          <div class="detail-item"><span>Member since</span><strong>{{ current_user.created_at|d('%b %Y') }}</strong></div>
+          <div class="detail-item"><span>Last sign-in</span><strong>{{ current_user.last_login_at|d('%d %b, %H:%M') if current_user.last_login_at else '—' }}</strong></div>
+          <div class="detail-item"><span>Donations</span><strong>{{ profile.total_donations }}</strong></div>
+          <div class="detail-item"><span>Level</span><strong>{{ profile.donation_streak_label }}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Eligibility</h2></div>
+      <div class="panel__body">
+        <div class="eligibility-meter {{ 'is-ready' if profile.is_eligible else 'is-waiting' }}">
+          <span class="eligibility-meter__icon"><i class="fa-solid fa-{{ 'heart-pulse' if profile.is_eligible else 'hourglass-half' }}"></i></span>
+          <div>
+            <strong>{{ 'Eligible to donate' if profile.is_eligible else 'Not eligible yet' }}</strong>
+            <p>{{ profile.next_eligible_date|d if profile.is_in_cooldown else 'Based on your age, weight and last donation.' }}</p>
+          </div>
+        </div>
+        <ul class="check-status-list mt-3">
+          <li class="{{ 'is-done' if profile.age_ok else '' }}"><i class="fa-solid fa-{{ 'circle-check' if profile.age_ok else 'circle-xmark' }}"></i><span><strong>Age 18–65</strong><small>{{ profile.age }} years</small></span></li>
+          <li class="{{ 'is-done' if profile.weight_ok else '' }}"><i class="fa-solid fa-{{ 'circle-check' if profile.weight_ok else 'circle-xmark' }}"></i><span><strong>Weight ≥ 50 kg</strong><small>{{ profile.weight_kg }} kg</small></span></li>
+          <li class="{{ 'is-done' if not profile.is_in_cooldown else '' }}"><i class="fa-solid fa-{{ 'circle-check' if not profile.is_in_cooldown else 'hourglass-half' }}"></i><span><strong>90-day interval</strong><small>{{ 'Clear' if not profile.is_in_cooldown else 'Next date ' ~ profile.next_eligible_date|d }}</small></span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Account security</h2></div>
+      <div class="panel__body">
+        <ul class="icon-list">
+          <li><i class="fa-solid fa-lock"></i> Your password is stored as a salted hash.</li>
+          <li><i class="fa-solid fa-envelope"></i> Use a current email — it is your login identifier.</li>
+          <li><i class="fa-solid fa-triangle-exclamation"></i> Never share your password with a receiver or admin.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

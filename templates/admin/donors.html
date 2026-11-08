@@ -1,0 +1,114 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import render_pagination, empty_state %}
+
+{% block title %}Manage Donors — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · people</span>{% endblock %}
+{% block page_title %}Donors{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Verify profiles, check availability and review donor details.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('admin.donors', verified='0') }}"><i class="fa-solid fa-user-shield"></i> Verification queue</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<form class="admin-filter panel" method="get" action="{{ url_for('admin.donors') }}">
+  <div class="panel__body">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-4">
+        <label class="form-label" for="donorSearch">Search</label>
+        <input class="form-control" id="donorSearch" name="q" value="{{ q }}" placeholder="Name, email, phone or city">
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="donorGroup">Blood group</label>
+        <select class="form-select" id="donorGroup" name="blood_group">
+          <option value="">Any</option>
+          {% for group in blood_groups %}<option value="{{ group }}" {{ 'selected' if blood_group == group else '' }}>{{ group }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="donorVerified">Verification</label>
+        <select class="form-select" id="donorVerified" name="verified">
+          <option value="all" {{ 'selected' if verified == 'all' else '' }}>All</option>
+          <option value="1" {{ 'selected' if verified == '1' else '' }}>Verified</option>
+          <option value="0" {{ 'selected' if verified == '0' else '' }}>Pending</option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="donorAvailability">Availability</label>
+        <select class="form-select" id="donorAvailability" name="availability">
+          <option value="all" {{ 'selected' if availability == 'all' else '' }}>All</option>
+          <option value="1" {{ 'selected' if availability == '1' else '' }}>Available</option>
+          <option value="0" {{ 'selected' if availability == '0' else '' }}>Unavailable</option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2 d-flex gap-2">
+        <button class="btn btn-red w-100" type="submit">Filter</button>
+        <a class="btn btn-light-soft" href="{{ url_for('admin.donors') }}" aria-label="Clear filters"><i class="fa-solid fa-xmark"></i></a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="panel mt-4">
+  <div class="panel__head">
+    <div><h2>Donor directory</h2><p>{{ pagination.total }} donor profile{{ '' if pagination.total == 1 else 's' }} match this view.</p></div>
+  </div>
+  <div class="table-responsive">
+    <table class="table app-table app-table--admin align-middle">
+      <thead>
+        <tr><th>Donor</th><th>Contact</th><th>Blood</th><th>City</th><th>Eligibility</th><th>Verification</th><th>Joined</th><th class="text-end">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for donor in pagination.items %}
+          <tr>
+            <td>
+              <div class="table-person">
+                <span class="avatar avatar--sm">{{ donor.user.initials }}</span>
+                <div><strong>{{ donor.user.full_name }}</strong><small>{{ donor.total_donations }} donation{{ '' if donor.total_donations == 1 else 's' }}</small></div>
+              </div>
+            </td>
+            <td><a class="table-link" href="mailto:{{ donor.user.email }}">{{ donor.user.email }}</a><small class="d-block text-muted">{{ donor.user.phone or 'No phone' }}</small></td>
+            <td><span class="blood-badge">{{ donor.blood_group }}</span></td>
+            <td>{{ donor.city }}</td>
+            <td>
+              {% if donor.is_eligible and donor.is_available %}
+                <span class="mini-badge mini-badge--available"><i class="fa-solid fa-circle"></i> Ready</span>
+              {% elif donor.is_in_cooldown %}
+                <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-hourglass-half"></i> Cooldown</span>
+              {% else %}
+                <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-circle"></i> Unavailable</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if donor.is_verified %}
+                <span class="mini-badge mini-badge--verified"><i class="fa-solid fa-circle-check"></i> Verified</span>
+              {% else %}
+                <span class="mini-badge mini-badge--warning"><i class="fa-solid fa-clock"></i> Pending</span>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ donor.created_at|d('%d %b %Y') }}</td>
+            <td class="text-end">
+              <div class="table-actions">
+                <a class="btn btn-sm btn-light-soft" href="{{ url_for('main.donor_profile', donor_id=donor.id) }}" title="View public profile"><i class="fa-solid fa-eye"></i></a>
+                <form method="post" action="{{ url_for('admin.verify_donor', donor_id=donor.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  {% if donor.is_verified %}
+                    <input type="hidden" name="action" value="unverify">
+                    <button class="btn btn-sm btn-outline-red" type="submit" title="Remove verification" data-confirm="Remove verification from {{ donor.user.full_name }}? They will no longer be able to accept new requests."><i class="fa-solid fa-user-slash"></i></button>
+                  {% else %}
+                    <input type="hidden" name="action" value="verify">
+                    <button class="btn btn-sm btn-red" type="submit" title="Verify donor"><i class="fa-solid fa-check"></i></button>
+                  {% endif %}
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8">{{ empty_state('droplet', 'No donors match', 'Try changing the filters or clearing the search.') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination) }}
+{% endblock %}

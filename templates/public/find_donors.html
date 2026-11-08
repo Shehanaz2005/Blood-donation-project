@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import donor_card, render_pagination, empty_state %}
+
+{% block title %}Find Blood Donors{% endblock %}
+{% block meta_description %}Search verified, available blood donors by blood group, city and compatibility.{% endblock %}
+
+{% block content %}
+<section class="page-hero page-hero--compact">
+  <div class="container">
+    <div class="page-hero__row">
+      <div>
+        <span class="eyebrow eyebrow--pill"><span class="pulse-dot"></span> Donor directory</span>
+        <h1>Find the right donor, near you.</h1>
+        <p class="page-hero__lead">Search verified donors who are currently eligible to donate. Contact details stay private until a donor accepts your request.</p>
+      </div>
+      {% if not current_user.is_authenticated %}
+        <div class="page-hero__aside">
+          <i class="fa-solid fa-lock"></i>
+          <div><strong>Want to send a request?</strong><p>Create a free receiver account to contact donors and track responses.</p><a href="{{ url_for('auth.register_receiver') }}">Create receiver account <i class="fa-solid fa-arrow-right"></i></a></div>
+        </div>
+      {% elif current_user.is_receiver %}
+        <div class="page-hero__aside">
+          <i class="fa-solid fa-hand-holding-medical"></i>
+          <div><strong>Signed in as a receiver</strong><p>You can send a request to any available, verified donor.</p><a href="{{ url_for('receiver.dashboard') }}">Go to dashboard <i class="fa-solid fa-arrow-right"></i></a></div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="section section--search">
+  <div class="container">
+    <div class="row g-4">
+      <aside class="col-lg-3">
+        <form class="filter-card" id="donorSearchForm"
+              data-api-url="{{ url_for('api.list_donors') }}"
+              data-viewer-role="{{ current_user.role if current_user.is_authenticated else 'anonymous' }}"
+              action="{{ url_for('main.find_donors') }}" method="get">
+          <div class="filter-card__head">
+            <h2><i class="fa-solid fa-sliders"></i> Filters</h2>
+            <a href="{{ url_for('main.find_donors') }}" class="link-btn" id="clearFilters">Clear all</a>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="bloodGroup">Blood group</label>
+            <select class="form-select" id="bloodGroup" name="blood_group">
+              <option value="">Any blood group</option>
+              {% for group in blood_groups %}
+                <option value="{{ group }}" {{ 'selected' if filters.blood_group == group else '' }}>{{ group }} — {{ blood_group_labels[group] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="cityFilter">City</label>
+            <input class="form-control" id="cityFilter" name="city" list="cityOptions"
+                   value="{{ filters.city }}" placeholder="e.g. Lagos" autocomplete="address-level2">
+            <datalist id="cityOptions">
+              {% for city in cities %}<option value="{{ city }}"></option>{% endfor %}
+            </datalist>
+          </div>
+
+          <div class="filter-checks">
+            <div class="form-check form-switch">
+              <input type="hidden" name="compatible" value="0">
+              <input class="form-check-input" type="checkbox" role="switch" name="compatible" value="1" id="compatibleFilter" {{ 'checked' if filters.compatible else '' }}>
+              <label class="form-check-label" for="compatibleFilter">
+                Include compatible groups
+                <span class="hint" data-bs-toggle="tooltip" title="Shows donors whose blood group is safe for the selected recipient group."><i class="fa-regular fa-circle-question"></i></span>
+              </label>
+            </div>
+            <div class="form-check form-switch">
+              <input type="hidden" name="available" value="0">
+              <input class="form-check-input" type="checkbox" role="switch" name="available" value="1" id="availableFilter" {{ 'checked' if filters.available else '' }}>
+              <label class="form-check-label" for="availableFilter">Available now</label>
+            </div>
+            <div class="form-check form-switch">
+              <input type="hidden" name="verified" value="0">
+              <input class="form-check-input" type="checkbox" role="switch" name="verified" value="1" id="verifiedFilter" {{ 'checked' if filters.verified else '' }}>
+              <label class="form-check-label" for="verifiedFilter">Verified donors only</label>
+            </div>
+            <div class="form-check form-switch">
+              <input type="hidden" name="eligible" value="0">
+              <input class="form-check-input" type="checkbox" role="switch" name="eligible" value="1" id="eligibleFilter" {{ 'checked' if filters.eligible else '' }}>
+              <label class="form-check-label" for="eligibleFilter">Eligible to donate</label>
+            </div>
+          </div>
+
+          <div class="mb-3 mt-3">
+            <label class="form-label" for="sortFilter">Sort by</label>
+            <select class="form-select" id="sortFilter" name="sort">
+              <option value="recommended" {{ 'selected' if filters.sort == 'recommended' else '' }}>Recommended</option>
+              <option value="newest" {{ 'selected' if filters.sort == 'newest' else '' }}>Newest members</option>
+              <option value="donations" {{ 'selected' if filters.sort == 'donations' else '' }}>Most donations</option>
+              <option value="name" {{ 'selected' if filters.sort == 'name' else '' }}>Name (A–Z)</option>
+            </select>
+          </div>
+
+          <button class="btn btn-red w-100" type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i> Apply filters
+          </button>
+
+          <div class="filter-card__note">
+            <i class="fa-solid fa-shield-halved"></i>
+            <p>Phone numbers and email addresses are never included in public search results.</p>
+          </div>
+        </form>
+
+        <div class="compat-card">
+          <h3><i class="fa-solid fa-droplet"></i> Compatibility quick guide</h3>
+          <p>Select a recipient group, then enable “compatible groups” to widen the search safely.</p>
+          <ul>
+            <li><span>O−</span> can donate to all groups</li>
+            <li><span>AB+</span> can receive from all groups</li>
+            <li><span>A+</span> receives A+, A−, O+, O−</li>
+            <li><span>B+</span> receives B+, B−, O+, O−</li>
+          </ul>
+          <small>Always confirm compatibility with the hospital blood bank.</small>
+        </div>
+      </aside>
+
+      <div class="col-lg-9">
+        <div class="results-toolbar">
+          <div>
+            <h2 class="results-toolbar__title"><span id="resultCount">{{ result_count }}</span> donor{{ '' if result_count == 1 else 's' }} found</h2>
+            <p class="results-toolbar__hint" id="resultHint">
+              {% if filters.blood_group %}Group {{ filters.blood_group }}{% if filters.compatible %} + compatible{% endif %}{% else %}All blood groups{% endif %}
+              {% if filters.city %} in {{ filters.city }}{% endif %}
+            </p>
+          </div>
+          <div class="results-toolbar__chips">
+            {% if filters.blood_group %}<span class="filter-chip">Group {{ filters.blood_group }}</span>{% endif %}
+            {% if filters.city %}<span class="filter-chip"><i class="fa-solid fa-location-dot"></i> {{ filters.city }}</span>{% endif %}
+            {% if filters.compatible %}<span class="filter-chip">Compatible</span>{% endif %}
+            {% if filters.verified %}<span class="filter-chip">Verified</span>{% endif %}
+          </div>
+        </div>
+
+        <div id="searchError" class="search-error" hidden>
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div><strong>We couldn't load donors.</strong><p>Check your connection and try again.</p></div>
+          <button type="button" class="btn btn-sm btn-outline-red" id="retrySearch">Retry</button>
+        </div>
+
+        <div class="row g-4" id="donorResults" aria-live="polite">
+          {% for donor in donors %}
+            <div class="col-md-6 col-xl-4">{{ donor_card(donor, current_user) }}</div>
+          {% else %}
+            <div class="col-12">
+              {{ empty_state('magnifying-glass', 'No donors match these filters', 'Try a wider city, enable compatible groups, or clear the verified/eligible filters. New donors join every week.', url_for('main.find_donors'), 'Reset search') }}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div id="donorPagination">{{ render_pagination(pagination) }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import stat_card, status_badge, urgency_badge, empty_state %}
+
+{% block title %}Donor Dashboard — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Donor dashboard</span>{% endblock %}
+{% block page_title %}Hello, {{ current_user.display_name }}.{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Here is what is happening with your donor profile today.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('donor.profile_edit') }}"><i class="fa-regular fa-user"></i> Edit profile</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="availability-card {{ 'is-on' if profile.is_available else 'is-off' }}">
+  <div class="availability-card__copy">
+    <span class="availability-card__icon"><i class="fa-solid fa-{{ 'circle-check' if profile.is_available else 'circle-pause' }}"></i></span>
+    <div>
+      <h2>{{ 'You are available to donate' if profile.is_available else 'You are marked unavailable' }}</h2>
+      <p>
+        {% if profile.can_accept_requests %}
+          Receivers can find you and send requests. Keep this on only when you can genuinely help.
+        {% elif not profile.is_verified %}
+          Your profile is pending verification. Availability will matter once an admin verifies you.
+        {% elif profile.is_in_cooldown %}
+          You are inside the safe donation window. You can switch on when you are eligible again.
+        {% else %}
+          Switch on when you are ready to receive requests.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+  <form method="post" action="{{ url_for('donor.availability') }}" class="availability-toggle"
+        data-availability-form data-url="{{ url_for('donor.availability') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <span class="availability-toggle__state" data-availability-label>{{ 'Available' if profile.is_available else 'Unavailable' }}</span>
+    <div class="form-check form-switch">
+      <input class="form-check-input" type="checkbox" role="switch" name="available" value="1"
+             id="availabilitySwitch" {{ 'checked' if profile.is_available else '' }}
+             aria-label="Toggle availability">
+      <label class="form-check-label visually-hidden" for="availabilitySwitch">Available to donate</label>
+    </div>
+  </form>
+</div>
+
+{% if not profile.is_verified %}
+  <div class="alert-banner alert-banner--warning">
+    <i class="fa-solid fa-user-shield"></i>
+    <div><strong>Verification pending</strong><p>An administrator needs to review your profile before you can accept requests. Make sure your name, blood group, city and weight are complete.</p></div>
+    <a class="btn btn-sm btn-outline-red" href="{{ url_for('donor.profile_edit') }}">Review profile</a>
+  </div>
+{% elif profile.is_in_cooldown %}
+  <div class="alert-banner alert-banner--info">
+    <i class="fa-solid fa-hourglass-half"></i>
+    <div><strong>Safe donation window</strong><p>You donated recently. Your next eligible date is <b>{{ profile.next_eligible_date|d }}</b> ({{ profile.days_until_eligible }} day{{ '' if profile.days_until_eligible == 1 else 's' }}). This protects your health.</p></div>
+  </div>
+{% endif %}
+
+<div class="stats-grid mt-4">
+  {{ stat_card('Pending requests', stats.pending, 'hourglass-half', 'amber', 'Waiting for your response') }}
+  {{ stat_card('Accepted', stats.accepted, 'hand-holding-medical', 'blue', 'Coordination in progress') }}
+  {{ stat_card('Completed donations', stats.completed, 'circle-check', 'green', 'Confirmed by receivers') }}
+  {{ stat_card('Lifetime donations', profile.total_donations, 'droplet', 'red', profile.donation_streak_label) }}
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-xl-7">
+    <div class="panel">
+      <div class="panel__head">
+        <div><h2>Incoming requests</h2><p>Requests waiting for your decision.</p></div>
+        <a class="link-btn" href="{{ url_for('donor.requests_list', status='pending') }}">View all</a>
+      </div>
+      <div class="panel__body panel__body--flush">
+        {% for item in pending_requests %}
+          <a class="request-list-item" href="{{ url_for('donor.request_detail', request_id=item.id) }}">
+            <span class="request-list-item__icon"><i class="fa-solid fa-droplet"></i></span>
+            <span class="request-list-item__body">
+              <span class="request-list-item__top">
+                <strong>{{ item.units }} unit{{ '' if item.units == 1 else 's' }} · {{ item.blood_group }}</strong>
+                {{ urgency_badge(item.urgency) }}
+              </span>
+              <span class="request-list-item__meta">
+                <i class="fa-solid fa-user"></i> {{ item.receiver.full_name }}
+                <i class="fa-solid fa-hospital"></i> {{ item.hospital_name }}
+                <i class="fa-solid fa-location-dot"></i> {{ item.city }}
+              </span>
+              <span class="request-list-item__foot">Needed {{ item.needed_by|d if item.needed_by else 'as soon as possible' }} · {{ item.created_at|timeago }}</span>
+            </span>
+            <i class="fa-solid fa-chevron-right request-list-item__arrow"></i>
+          </a>
+        {% else %}
+          {{ empty_state('inbox', 'No pending requests', 'When a receiver sends you a request, it will appear here with hospital and urgency details.') }}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head">
+        <div><h2>Accepted requests</h2><p>Donations you have agreed to make.</p></div>
+      </div>
+      <div class="panel__body panel__body--flush">
+        {% for item in accepted_requests %}
+          <a class="request-list-item" href="{{ url_for('donor.request_detail', request_id=item.id) }}">
+            <span class="request-list-item__icon request-list-item__icon--green"><i class="fa-solid fa-hand-holding-medical"></i></span>
+            <span class="request-list-item__body">
+              <span class="request-list-item__top"><strong>{{ item.receiver.full_name }} · {{ item.hospital_name }}</strong>{{ status_badge(item.status) }}</span>
+              <span class="request-list-item__meta"><i class="fa-solid fa-location-dot"></i> {{ item.city }} <i class="fa-regular fa-calendar"></i> Needed {{ item.needed_by|d if item.needed_by else 'ASAP' }}</span>
+              <span class="request-list-item__foot">Reference {{ item.reference }} · accepted {{ item.responded_at|timeago }}</span>
+            </span>
+            <i class="fa-solid fa-chevron-right request-list-item__arrow"></i>
+          </a>
+        {% else %}
+          <div class="panel-empty"><i class="fa-solid fa-hand-holding-medical"></i><p>No accepted requests right now. You're all clear.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="panel">
+      <div class="panel__head"><h2>Profile readiness</h2></div>
+      <div class="panel__body">
+        <div class="progress-block">
+          <div class="progress-block__top"><span>Profile completeness</span><strong>{{ profile.profile_completeness }}%</strong></div>
+          <div class="progress" role="progressbar" aria-valuenow="{{ profile.profile_completeness }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {{ profile.profile_completeness }}%"></div>
+          </div>
+          <p class="form-hint">A complete profile helps receivers trust you and speeds up verification.</p>
+        </div>
+
+        <ul class="check-status-list">
+          <li class="{{ 'is-done' if profile.is_verified else '' }}">
+            <i class="fa-solid fa-{{ 'circle-check' if profile.is_verified else 'circle' }}"></i>
+            <span><strong>Admin verification</strong><small>{{ 'Verified on ' ~ (profile.verified_at|d) if profile.is_verified else 'Awaiting review' }}</small></span>
+          </li>
+          <li class="{{ 'is-done' if profile.is_available else '' }}">
+            <i class="fa-solid fa-{{ 'circle-check' if profile.is_available else 'circle' }}"></i>
+            <span><strong>Availability</strong><small>{{ 'Discoverable by receivers' if profile.is_available else 'Hidden from search' }}</small></span>
+          </li>
+          <li class="{{ 'is-done' if profile.is_eligible else '' }}">
+            <i class="fa-solid fa-{{ 'circle-check' if profile.is_eligible else 'circle' }}"></i>
+            <span><strong>Medical eligibility</strong><small>{{ 'Eligible now' if profile.is_eligible else (profile.eligibility_reasons[-1] if profile.eligibility_reasons else 'Not eligible') }}</small></span>
+          </li>
+          <li class="{{ 'is-done' if profile.share_contact else '' }}">
+            <i class="fa-solid fa-{{ 'circle-check' if profile.share_contact else 'circle' }}"></i>
+            <span><strong>Contact sharing</strong><small>{{ 'Phone shared after acceptance' if profile.share_contact else 'Phone stays private' }}</small></span>
+          </li>
+        </ul>
+
+        <a class="btn btn-outline-red w-100" href="{{ url_for('donor.profile_edit') }}">Complete my profile</a>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Your donation snapshot</h2></div>
+      <div class="panel__body">
+        <div class="donor-snapshot">
+          <span class="blood-badge blood-badge--xl">{{ profile.blood_group }}</span>
+          <div>
+            <strong>{{ profile.blood_group }} — {{ blood_group_labels[profile.blood_group] }}</strong>
+            <p>{{ profile.city }} · {{ profile.donation_streak_label }}</p>
+          </div>
+        </div>
+        <div class="detail-grid detail-grid--two">
+          <div class="detail-item"><span>Age</span><strong>{{ profile.age }} years</strong></div>
+          <div class="detail-item"><span>Weight</span><strong>{{ profile.weight_kg }} kg</strong></div>
+          <div class="detail-item"><span>Last donation</span><strong>{{ profile.last_donation_date|d if profile.last_donation_date else 'None recorded' }}</strong></div>
+          <div class="detail-item"><span>Next eligible</span><strong>{{ profile.next_eligible_date|d if profile.next_eligible_date else 'Now' }}</strong></div>
+        </div>
+        <a class="link-arrow" href="{{ url_for('main.donor_profile', donor_id=profile.id) }}">View public profile <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="panel mt-4">
+  <div class="panel__head">
+    <div><h2>Recent activity</h2><p>Your latest request history across all statuses.</p></div>
+    <a class="link-btn" href="{{ url_for('donor.requests_list') }}">All requests</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table app-table align-middle">
+      <thead><tr><th>Reference</th><th>Receiver</th><th>Hospital</th><th>Blood</th><th>Status</th><th>Received</th><th></th></tr></thead>
+      <tbody>
+        {% for item in history %}
+          <tr>
+            <td><span class="mono">{{ item.reference }}</span></td>
+            <td>{{ item.receiver.full_name }}</td>
+            <td>{{ item.hospital_name }}</td>
+            <td>{{ item.units }} × {{ item.blood_group }}</td>
+            <td>{{ status_badge(item.status) }}</td>
+            <td class="text-muted">{{ item.created_at|timeago }}</td>
+            <td class="text-end"><a class="table-link" href="{{ url_for('donor.request_detail', request_id=item.id) }}">View</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="text-center text-muted py-4">No requests yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

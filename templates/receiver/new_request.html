@@ -1,0 +1,101 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/forms.html" import render_field %}
+
+{% block title %}Send a Blood Request — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">New blood request</span>{% endblock %}
+{% block page_title %}Send a request to {{ donor.user.full_name }}{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Clear hospital details help the donor decide quickly.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('main.donor_profile', donor_id=donor.id) }}"><i class="fa-solid fa-arrow-left"></i> Donor profile</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+  <div class="col-xl-8">
+    <form method="post" class="panel needs-validation" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="panel__head">
+        <div><h2>Request details</h2><p>The donor will see these details and your name.</p></div>
+        <span class="blood-badge blood-badge--lg">{{ donor.blood_group }}</span>
+      </div>
+      <div class="panel__body">
+        <div class="form-section form-section--flush">
+          <div class="form-section__head"><span>01</span><div><h2>What is needed</h2><p>Units and urgency.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-6">{{ render_field(form.units) }}</div>
+            <div class="col-md-6">{{ render_field(form.urgency) }}</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section__head"><span>02</span><div><h2>Hospital &amp; timing</h2><p>Where and when the donor should come.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-7">{{ render_field(form.hospital_name) }}</div>
+            <div class="col-md-5">{{ render_field(form.city) }}</div>
+            <div class="col-md-8">{{ render_field(form.hospital_address) }}</div>
+            <div class="col-md-4">{{ render_field(form.needed_by) }}</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section__head"><span>03</span><div><h2>Contact &amp; message</h2><p>How the donor can coordinate with you after accepting.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-6">{{ render_field(form.contact_phone) }}</div>
+          </div>
+          {{ render_field(form.message) }}
+          {{ render_field(form.confirm_info) }}
+        </div>
+
+        <div class="callout callout--warning">
+          <i class="fa-solid fa-shield-halved"></i>
+          <div><strong>Respect donor privacy</strong><p>The donor's phone number is shared only after they accept and consent. Use it only to coordinate this donation. Never pressure a donor or offer payment for blood.</p></div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap mt-3">
+          {{ form.submit(class_='btn btn-red btn-lg') }}
+          <a class="btn btn-light-soft btn-lg" href="{{ url_for('main.donor_profile', donor_id=donor.id) }}">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel">
+      <div class="panel__head"><h2>Donor summary</h2></div>
+      <div class="panel__body">
+        <div class="person-card">
+          <span class="avatar avatar--lg">{{ donor.user.initials }}</span>
+          <div><strong>{{ donor.user.full_name }}</strong><small>{{ donor.city }} · {{ donor.donation_streak_label }}</small></div>
+        </div>
+        <div class="detail-grid detail-grid--two mt-3">
+          <div class="detail-item"><span>Blood group</span><strong>{{ donor.blood_group }}</strong></div>
+          <div class="detail-item"><span>Donations</span><strong>{{ donor.total_donations }}</strong></div>
+          <div class="detail-item"><span>Verified</span><strong>{{ 'Yes' if donor.is_verified else 'No' }}</strong></div>
+          <div class="detail-item"><span>Available</span><strong>{{ 'Yes' if donor.is_available else 'No' }}</strong></div>
+          <div class="detail-item"><span>Last donation</span><strong>{{ donor.last_donation_date|d if donor.last_donation_date else 'None recorded' }}</strong></div>
+          <div class="detail-item"><span>Eligible</span><strong>{{ 'Now' if donor.is_eligible else 'Later' }}</strong></div>
+        </div>
+        {% if donor.bio %}<p class="profile-bio mt-3">{{ donor.bio }}</p>{% endif %}
+        <p class="privacy-note"><i class="fa-solid fa-lock"></i> The donor's phone number is hidden until they accept your request and have contact sharing enabled.</p>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>What happens next?</h2></div>
+      <div class="panel__body">
+        <div class="mini-timeline">
+          <div class="mini-timeline__item is-done"><span><i class="fa-solid fa-paper-plane"></i></span><div><strong>Request sent</strong><small>The donor is notified instantly</small></div></div>
+          <div class="mini-timeline__item"><span><i class="fa-solid fa-hand-holding-medical"></i></span><div><strong>Donor responds</strong><small>Accept or decline</small></div></div>
+          <div class="mini-timeline__item"><span><i class="fa-solid fa-phone"></i></span><div><strong>Coordinate</strong><small>Contact details unlock on acceptance</small></div></div>
+          <div class="mini-timeline__item"><span><i class="fa-solid fa-circle-check"></i></span><div><strong>Confirm completion</strong><small>Mark the request complete after donation</small></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout--danger mt-4">
+      <i class="fa-solid fa-truck-medical"></i>
+      <div><strong>Critical emergency?</strong><p>Contact the hospital blood bank and emergency services immediately. Do not wait for a platform response.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

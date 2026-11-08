@@ -1,0 +1,42 @@
+{% macro render_field(field, wrapper_class='mb-3', hint=None) %}
+  {% set base_class = 'form-select' if field.type in ('SelectField', 'SelectMultipleField') else 'form-control' %}
+  {% if field.type in ('BooleanField', 'RadioField') %}
+    <div class="form-check {{ wrapper_class }}">
+      {{ field(class_='form-check-input' + (' is-invalid' if field.errors else '')) }}
+      {{ field.label(class_='form-check-label') }}
+      {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      {% if hint or field.description %}<div class="form-text">{{ hint or field.description }}</div>{% endif %}
+    </div>
+  {% else %}
+    <div class="{{ wrapper_class }}">
+      {{ field.label(class_='form-label') }}
+      {% if field.type == 'TextAreaField' %}
+        {{ field(class_=base_class + (' is-invalid' if field.errors else ''), rows=4) }}
+      {% elif field.type == 'SelectField' %}
+        {{ field(class_=base_class + (' is-invalid' if field.errors else '')) }}
+      {% else %}
+        {{ field(class_=base_class + (' is-invalid' if field.errors else '')) }}
+      {% endif %}
+      {% for error in field.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      {% if hint or field.description %}<div class="form-text">{{ hint or field.description }}</div>{% endif %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro field_errors(field) %}
+  {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+{% endmacro %}
+
+{% macro password_field(field) %}
+  <div class="mb-3">
+    {{ field.label(class_='form-label') }}
+    <div class="password-wrap">
+      {{ field(class_='form-control' + (' is-invalid' if field.errors else ''), autocomplete='new-password') }}
+      <button type="button" class="password-toggle" data-password-toggle aria-label="Show password">
+        <i class="fa-regular fa-eye" aria-hidden="true"></i>
+      </button>
+    </div>
+    {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+    {% if field.description %}<div class="form-text">{{ field.description }}</div>{% endif %}
+  </div>
+{% endmacro %}

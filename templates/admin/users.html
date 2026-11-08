@@ -1,0 +1,102 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import render_pagination, empty_state %}
+
+{% block title %}All Accounts — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · access</span>{% endblock %}
+{% block page_title %}All accounts{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Enable or disable accounts and audit role access.</p>{% endblock %}
+
+{% block dashboard_content %}
+<form class="admin-filter panel" method="get" action="{{ url_for('admin.users') }}">
+  <div class="panel__body">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-5">
+        <label class="form-label" for="userSearch">Search</label>
+        <input class="form-control" id="userSearch" name="q" value="{{ q }}" placeholder="Name, email or phone">
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="roleFilter">Role</label>
+        <select class="form-select" id="roleFilter" name="role">
+          <option value="all" {{ 'selected' if role == 'all' else '' }}>All roles</option>
+          <option value="donor" {{ 'selected' if role == 'donor' else '' }}>Donor</option>
+          <option value="receiver" {{ 'selected' if role == 'receiver' else '' }}>Receiver</option>
+          <option value="admin" {{ 'selected' if role == 'admin' else '' }}>Administrator</option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-2">
+        <label class="form-label" for="statusFilter">Status</label>
+        <select class="form-select" id="statusFilter" name="status">
+          <option value="all" {{ 'selected' if status == 'all' else '' }}>All</option>
+          <option value="active" {{ 'selected' if status == 'active' else '' }}>Active</option>
+          <option value="disabled" {{ 'selected' if status == 'disabled' else '' }}>Disabled</option>
+        </select>
+      </div>
+      <div class="col-lg-3 d-flex gap-2">
+        <button class="btn btn-red w-100" type="submit">Apply</button>
+        <a class="btn btn-light-soft" href="{{ url_for('admin.users') }}" aria-label="Clear filters"><i class="fa-solid fa-xmark"></i></a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="callout callout--warning mt-4">
+  <i class="fa-solid fa-user-shield"></i>
+  <div><strong>Account controls are audited</strong><p>Disabling an account signs the user out and prevents new sign-ins. You cannot disable your own account. Only a super administrator can change another administrator's status, and at least one active admin must remain.</p></div>
+</div>
+
+<div class="panel mt-4">
+  <div class="panel__head">
+    <div><h2>Accounts</h2><p>{{ pagination.total }} account{{ '' if pagination.total == 1 else 's' }} in this view.</p></div>
+  </div>
+  <div class="table-responsive">
+    <table class="table app-table app-table--admin align-middle">
+      <thead><tr><th>Account</th><th>Role</th><th>Contact</th><th>Status</th><th>Joined</th><th>Last sign-in</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for user in pagination.items %}
+          <tr>
+            <td>
+              <div class="table-person">
+                <span class="avatar avatar--sm">{{ user.initials }}</span>
+                <div><strong>{{ user.full_name }}</strong><small>#{{ user.id }}</small></div>
+              </div>
+            </td>
+            <td>
+              <span class="role-badge role-badge--{{ user.role }}"><i class="fa-solid fa-{{ 'droplet' if user.is_donor else ('hand-holding-medical' if user.is_receiver else 'user-shield') }}"></i> {{ user.role|capitalize }}</span>
+            </td>
+            <td><a class="table-link" href="mailto:{{ user.email }}">{{ user.email }}</a><small class="d-block text-muted">{{ user.phone or 'No phone' }}</small></td>
+            <td>
+              {% if user.is_active %}
+                <span class="mini-badge mini-badge--available"><i class="fa-solid fa-circle"></i> Active</span>
+              {% else %}
+                <span class="mini-badge mini-badge--danger"><i class="fa-solid fa-ban"></i> Disabled</span>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ user.created_at|d('%d %b %Y') }}</td>
+            <td class="text-muted">{{ user.last_login_at|timeago if user.last_login_at else 'Never' }}</td>
+            <td class="text-end">
+              {% if user.id == current_user.id %}
+                <span class="text-muted small">You</span>
+              {% elif user.role == 'admin' and not (current_user.admin_profile and current_user.admin_profile.can_manage_admins) %}
+                <span class="text-muted small" title="Super administrator required">Protected</span>
+              {% else %}
+                <form method="post" action="{{ url_for('admin.toggle_active', user_id=user.id) }}" class="d-inline"
+                      data-confirm="{{ 'Disable' if user.is_active else 'Reactivate' }} {{ user.full_name }}'s account?">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-sm {{ 'btn-outline-red' if user.is_active else 'btn-red' }}" type="submit">
+                    <i class="fa-solid fa-{{ 'user-slash' if user.is_active else 'user-check' }}"></i>
+                    {{ 'Disable' if user.is_active else 'Reactivate' }}
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7">{{ empty_state('users', 'No accounts found', 'Try changing the role, status or search filters.') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination) }}
+{% endblock %}

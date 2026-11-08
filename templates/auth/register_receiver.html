@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "macros/forms.html" import render_field, password_field %}
+
+{% block title %}Create a Receiver Account — Blood Connect{% endblock %}
+{% block meta_description %}Create a free receiver account to search verified blood donors, send requests and track every response.{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+  <div class="container">
+    <div class="auth-grid">
+      {% set aside_eyebrow = 'Receiver account' %}
+      {% set aside_title = 'When time matters, clarity matters more.' %}
+      {% set aside_text = 'Search verified, eligible donors by blood group and city, send a structured request, and follow every response in one place.' %}
+      {% set aside_points = ['Search verified donors only', 'Send requests with hospital details', 'Track pending, accepted and completed status', 'Report concerns directly to admins'] %}
+      {% include "components/auth_aside.html" %}
+
+      <div class="auth-card auth-card--form">
+        <div class="auth-card__head">
+          <span class="eyebrow">Receiver registration</span>
+          <h1>Create a receiver account</h1>
+          <p>Free for patients, families and caregivers. You'll be able to search donors immediately.</p>
+        </div>
+
+        <form method="post" class="needs-validation" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="form-section">
+            <div class="form-section__head"><span>01</span><div><h2>Your details</h2><p>Used for sign-in and request coordination.</p></div></div>
+            <div class="row g-3">
+              <div class="col-md-6">{{ render_field(form.full_name) }}</div>
+              <div class="col-md-6">{{ render_field(form.email) }}</div>
+              <div class="col-md-6">{{ render_field(form.phone) }}</div>
+              <div class="col-md-6">{{ render_field(form.city) }}</div>
+              <div class="col-md-6">{{ password_field(form.password) }}</div>
+              <div class="col-md-6">{{ password_field(form.confirm_password) }}</div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section__head"><span>02</span><div><h2>Location &amp; patient context</h2><p>Helps us prefill requests and find nearby donors.</p></div></div>
+            <div class="row g-3">
+              <div class="col-md-7">{{ render_field(form.address) }}</div>
+              <div class="col-md-5">{{ render_field(form.patient_relation) }}</div>
+            </div>
+            <div class="callout callout--info">
+              <i class="fa-solid fa-hospital"></i>
+              <div><strong>Hospital details come next</strong><p>When you send a request, you'll add the hospital, units needed, urgency and a contact number. Donors only see what you submit for each request.</p></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section__head"><span>03</span><div><h2>Responsible use</h2><p>Donor privacy depends on every receiver.</p></div></div>
+            {{ render_field(form.terms) }}
+            <p class="form-hint mt-2">You agree not to use donor contact details for marketing, harassment or any purpose unrelated to a legitimate blood donation request.</p>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap align-items-center">
+            {{ form.submit(class_='btn btn-red btn-lg') }}
+            <a class="btn btn-light-soft btn-lg" href="{{ url_for('auth.login') }}">I already have an account</a>
+          </div>
+        </form>
+
+        <div class="auth-card__foot">
+          <p>Want to donate instead?</p>
+          <a class="subtle-link" href="{{ url_for('auth.register_donor') }}"><i class="fa-solid fa-droplet"></i> Register as a blood donor</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import section_heading %}
+
+{% block title %}About Blood Connect — Our mission, safety and eligibility{% endblock %}
+{% block meta_description %}Learn how Blood Connect verifies donors, protects contact privacy, and coordinates blood donation requests safely.{% endblock %}
+
+{% block content %}
+<section class="page-hero page-hero--about">
+  <div class="container">
+    <div class="row align-items-end g-4">
+      <div class="col-lg-8">
+        <span class="eyebrow eyebrow--pill"><span class="pulse-dot"></span> About Blood Connect</span>
+        <h1>Safer connections.<br>Faster donations.<br><span>More lives saved.</span></h1>
+        <p class="page-hero__lead">Blood Connect is a community-powered coordination platform. We don't replace hospitals or blood banks — we shorten the distance between a patient who needs blood and a verified donor who is ready to help.</p>
+      </div>
+      <div class="col-lg-4">
+        <div class="about-stat-card">
+          <div><strong>{{ stats.donors }}</strong><span>donors registered</span></div>
+          <div><strong>{{ stats.completed_requests }}</strong><span>requests completed</span></div>
+          <div><strong>{{ stats.cities }}</strong><span>cities represented</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="mission">
+  <div class="container">
+    <div class="row g-5">
+      <div class="col-lg-5">
+        <span class="eyebrow">Our mission</span>
+        <h2 class="section-title">Make finding a willing donor a calm, clear process.</h2>
+      </div>
+      <div class="col-lg-7">
+        <div class="mission-copy">
+          <p class="lead">In an emergency, families often rely on scattered phone lists and social media posts. Blood Connect replaces that uncertainty with a structured, verified directory and a traceable request workflow.</p>
+          <p>Donors decide when they are available. Receivers search by blood group and location, then send a request with the hospital and urgency details. Administrators verify donors, review reports and keep the platform accountable. Every role has a separate dashboard and only sees what it needs.</p>
+        </div>
+        <div class="row g-3 mt-2">
+          <div class="col-sm-4"><div class="value-card"><i class="fa-solid fa-shield-heart"></i><h3>Trust</h3><p>Admin-verified profiles and clear status badges.</p></div></div>
+          <div class="col-sm-4"><div class="value-card"><i class="fa-solid fa-lock"></i><h3>Privacy</h3><p>Contact details shared only with consent.</p></div></div>
+          <div class="col-sm-4"><div class="value-card"><i class="fa-solid fa-bolt"></i><h3>Clarity</h3><p>Every request has a reference and a visible timeline.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft" id="how">
+  <div class="container">
+    {{ section_heading("The workflow", "Designed so every role knows what to do next") }}
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="role-card">
+          <span class="role-card__icon"><i class="fa-solid fa-droplet"></i></span>
+          <span class="eyebrow">Donors</span>
+          <h3>Register &amp; stay in control</h3>
+          <ul><li>Complete a health-aware profile</li><li>Get verified by an admin</li><li>Toggle availability any time</li><li>Accept or decline requests</li></ul>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="role-card">
+          <span class="role-card__icon role-card__icon--blue"><i class="fa-solid fa-hand-holding-medical"></i></span>
+          <span class="eyebrow">Receivers</span>
+          <h3>Search &amp; send a request</h3>
+          <ul><li>Filter by group, city and eligibility</li><li>See only verified donors by default</li><li>Share hospital and urgency details</li><li>Track every response</li></ul>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="role-card">
+          <span class="role-card__icon role-card__icon--green"><i class="fa-solid fa-user-shield"></i></span>
+          <span class="eyebrow">Admins</span>
+          <h3>Verify &amp; moderate</h3>
+          <ul><li>Verify donor profiles</li><li>Manage requests and accounts</li><li>Review user reports</li><li>Monitor platform statistics</li></ul>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="role-card">
+          <span class="role-card__icon role-card__icon--amber"><i class="fa-solid fa-heart-pulse"></i></span>
+          <span class="eyebrow">Hospitals</span>
+          <h3>Coordinate the donation</h3>
+          <ul><li>Receivers confirm completion</li><li>Donation history updates automatically</li><li>90-day cooldown protects donors</li><li>Unsafe behaviour can be reported</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="eligibility">
+  <div class="container">
+    <div class="row g-5 align-items-center">
+      <div class="col-lg-6">
+        <span class="eyebrow">Donor eligibility</span>
+        <h2 class="section-title">A quick safety check before you donate.</h2>
+        <p class="section-lead">Blood Connect applies basic eligibility rules to every profile. Final medical screening always happens at the donation centre — these checks simply help donors and receivers make informed choices.</p>
+        <div class="callout callout--warning mt-4">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div><strong>Health comes first.</strong><p>If you are unwell, pregnant, recently had surgery or a tattoo, or take certain medication, speak to a clinician before donating.</p></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="eligibility-grid">
+          <div class="eligibility-item eligibility-item--yes"><i class="fa-solid fa-circle-check"></i><div><strong>Age 18–65</strong><p>Valid identification may be required at the centre.</p></div></div>
+          <div class="eligibility-item eligibility-item--yes"><i class="fa-solid fa-circle-check"></i><div><strong>At least 50 kg</strong><p>Donors must meet the minimum weight requirement.</p></div></div>
+          <div class="eligibility-item eligibility-item--yes"><i class="fa-solid fa-circle-check"></i><div><strong>90 days since last donation</strong><p>The platform calculates your next eligible date automatically.</p></div></div>
+          <div class="eligibility-item eligibility-item--yes"><i class="fa-solid fa-circle-check"></i><div><strong>Feeling well</strong><p>Hydrated, rested and free of infection on donation day.</p></div></div>
+          <div class="eligibility-item eligibility-item--no"><i class="fa-solid fa-circle-xmark"></i><div><strong>Recent illness or infection</strong><p>Wait until you have fully recovered and a clinician approves.</p></div></div>
+          <div class="eligibility-item eligibility-item--no"><i class="fa-solid fa-circle-xmark"></i><div><strong>Pregnancy or recent birth</strong><p>Follow your doctor's guidance on when it is safe to donate.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft" id="safety">
+  <div class="container">
+    {{ section_heading("Trust & safety", "Practical safeguards, built into the workflow") }}
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3"><div class="safety-tile"><i class="fa-solid fa-user-check"></i><h3>Admin verification</h3><p>New donor profiles are reviewed before they can accept requests. Verified badges are visible across search.</p></div></div>
+      <div class="col-md-6 col-lg-3"><div class="safety-tile"><i class="fa-solid fa-user-lock"></i><h3>Consent-first contact</h3><p>Donors choose whether to share their phone number. Receivers see it only after an accepted request.</p></div></div>
+      <div class="col-md-6 col-lg-3"><div class="safety-tile"><i class="fa-solid fa-flag"></i><h3>Report &amp; review</h3><p>Any signed-in user can report suspicious behaviour. Administrators review and document every report.</p></div></div>
+      <div class="col-md-6 col-lg-3"><div class="safety-tile"><i class="fa-solid fa-shield-halved"></i><h3>Secure by default</h3><p>Hashed passwords, CSRF protection, role-based route guards and input validation on the server.</p></div></div>
+    </div>
+    <div class="row g-4 mt-2">
+      <div class="col-lg-6">
+        <div class="callout callout--danger">
+          <i class="fa-solid fa-truck-medical"></i>
+          <div><strong>In a life-threatening emergency</strong><p>Call your local emergency services and contact the hospital blood bank first. Blood Connect helps coordinate willing donors but is not an ambulance or emergency dispatch service.</p></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="callout callout--info" id="privacy">
+          <i class="fa-solid fa-lock"></i>
+          <div><strong>Privacy &amp; consent</strong><p>Donor phone numbers are never shown in public search results. Receivers must be signed in, have an accepted request, and the donor must have contact sharing enabled. Administrators can access contact details only for moderation and support.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="faq">
+  <div class="container">
+    <div class="row g-5">
+      <div class="col-lg-4">
+        <span class="eyebrow">Questions</span>
+        <h2 class="section-title">Frequently asked questions</h2>
+        <p class="section-lead">Still unsure about something? Email <a href="mailto:{{ config.SUPPORT_EMAIL }}">{{ config.SUPPORT_EMAIL }}</a>.</p>
+      </div>
+      <div class="col-lg-8">
+        <div class="accordion faq-accordion" id="faqAccordion">
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="true" aria-controls="faq1">Do I have to pay to use Blood Connect?</button></h3>
+            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion"><div class="accordion-body">No. Searching for donors, registering and sending requests are free. Blood Connect never sells donor data, and we do not facilitate paid blood sales. Voluntary donation is the safest model.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">Why does my donor profile need verification?</button></h3>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">Verification protects receivers from fake or incomplete profiles. An administrator reviews the profile, then adds a verified badge. Unverified donors can still sign in and update their profile, but they cannot accept new requests.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">When can a receiver see my phone number?</button></h3>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">Only after you accept their request, and only if “Share my phone number” is enabled in your profile. You can switch this off at any time. Public search results never include contact details.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">How is the 90-day cooldown calculated?</button></h3>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">When a receiver marks a donation as completed, the donor's last donation date is updated. The profile then shows the next eligible date, 90 days later. The donor is automatically filtered out of “eligible” search results until then.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">What happens when I report someone?</button></h3>
+            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">The report enters the admin queue. An administrator can mark it as under review, then resolve or dismiss it with an internal note. You will receive a notification when your report is reviewed. Serious cases may lead to an account being disabled.</div></div>
+          </div>
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">Is my password stored securely?</button></h3>
+            <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body">Passwords are hashed with Werkzeug's salted password hashing and are never stored in plain text. Sessions use HTTP-only cookies, forms are CSRF-protected, and all database access goes through SQLAlchemy's parameterised ORM queries.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-banner cta-banner--soft">
+      <div class="cta-banner__content">
+        <span class="eyebrow">Join the network</span>
+        <h2>Your community is one donor away from a better outcome.</h2>
+        <p>Register as a donor today, or create a receiver account and search verified donors near you.</p>
+      </div>
+      <div class="cta-banner__actions">
+        <a class="btn btn-red btn-lg" href="{{ url_for('auth.register_donor') }}">Become a donor</a>
+        <a class="btn btn-outline-red btn-lg" href="{{ url_for('main.find_donors') }}">Find donors</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "macros/forms.html" import render_field, password_field %}
+
+{% block title %}Administrator sign in — Blood Connect{% endblock %}
+{% block body_class %}admin-auth-body{% endblock %}
+
+{% block content %}
+<section class="auth-page auth-page--admin">
+  <div class="container">
+    <div class="auth-grid">
+      {% set aside_eyebrow = 'Administrator console' %}
+      {% set aside_title = 'Keep the network trustworthy.' %}
+      {% set aside_text = 'The admin console is restricted to verified administrators. Every action is recorded against your account.' %}
+      {% set aside_points = ['Verify donor profiles before they accept requests', 'Review and resolve user reports', 'Monitor requests and platform statistics', 'Manage account access with role restrictions'] %}
+      {% include "components/auth_aside.html" %}
+
+      <div class="auth-card">
+        <div class="auth-card__head">
+          <span class="eyebrow eyebrow--dark"><i class="fa-solid fa-shield-halved"></i> Restricted access</span>
+          <h1>Administrator sign in</h1>
+          <p>Use your administrator credentials. Donor and receiver accounts cannot access this console.</p>
+        </div>
+
+        <div class="callout callout--warning">
+          <i class="fa-solid fa-lock"></i>
+          <div><strong>Authorised personnel only.</strong><p>Sign-in attempts are rate limited. If you are not an administrator, return to the <a href="{{ url_for('auth.login') }}">regular sign-in page</a>.</p></div>
+        </div>
+
+        <form method="post" class="needs-validation" novalidate>
+          {{ form.hidden_tag() }}
+          {{ render_field(form.email, wrapper_class='mb-3') }}
+          {{ password_field(form.password) }}
+          {{ render_field(form.remember, wrapper_class='form-check mb-4') }}
+          {{ form.submit(class_='btn btn-dark btn-lg w-100', value='Sign in to admin console') }}
+        </form>
+
+        <div class="auth-card__foot">
+          <a class="subtle-link" href="{{ url_for('main.home') }}"><i class="fa-solid fa-arrow-left"></i> Back to public site</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

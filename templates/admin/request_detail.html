@@ -1,0 +1,115 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import status_badge, urgency_badge %}
+
+{% block title %}Admin · Request {{ blood_request.reference }}{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · request detail</span>{% endblock %}
+{% block page_title %}{{ blood_request.reference }}{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Created {{ blood_request.created_at|dt('%d %b %Y, %I:%M %p') }} · Last updated {{ blood_request.updated_at|timeago }}</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('admin.requests_list') }}"><i class="fa-solid fa-arrow-left"></i> Back to requests</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="request-detail-head">
+  <div class="request-detail-head__main">
+    <span class="blood-badge blood-badge--xl">{{ blood_request.blood_group }}</span>
+    <div>
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        {{ status_badge(blood_request.status) }}
+        {{ urgency_badge(blood_request.urgency) }}
+      </div>
+      <h2>{{ blood_request.units }} unit{{ '' if blood_request.units == 1 else 's' }} of {{ blood_request.blood_group }}</h2>
+      <p>{{ blood_request.receiver.full_name }} → {{ blood_request.donor.full_name }}</p>
+    </div>
+  </div>
+  <div class="request-detail-head__meta">
+    <div><span>Needed by</span><strong>{{ blood_request.needed_by|d if blood_request.needed_by else 'ASAP' }}</strong></div>
+    <div><span>City</span><strong>{{ blood_request.city }}</strong></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="panel">
+      <div class="panel__head"><h2>Request data</h2></div>
+      <div class="panel__body">
+        <div class="detail-grid">
+          <div class="detail-item"><span>Reference</span><strong class="mono">{{ blood_request.reference }}</strong></div>
+          <div class="detail-item"><span>Hospital</span><strong>{{ blood_request.hospital_name }}</strong></div>
+          <div class="detail-item"><span>Hospital address</span><strong>{{ blood_request.hospital_address or 'Not provided' }}</strong></div>
+          <div class="detail-item"><span>City</span><strong>{{ blood_request.city }}</strong></div>
+          <div class="detail-item"><span>Contact phone</span><strong>{{ blood_request.contact_phone }}</strong></div>
+          <div class="detail-item"><span>Urgency</span><strong>{{ urgency_meta[blood_request.urgency].label }}</strong></div>
+        </div>
+        <div class="message-box mt-4"><span>Receiver message</span><p>{{ blood_request.message or 'No message provided.' }}</p></div>
+        {% if blood_request.donor_response %}
+          <div class="message-box message-box--response mt-3"><span>Donor response</span><p>{{ blood_request.donor_response }}</p></div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if blood_request.status in ('pending', 'accepted') %}
+      <div class="panel mt-4">
+        <div class="panel__head"><div><h2>Administrative actions</h2><p>Use these only when normal coordination has stalled.</p></div></div>
+        <div class="panel__body">
+          <div class="d-flex gap-2 flex-wrap">
+            {% if blood_request.is_accepted %}
+              <form method="post" action="{{ url_for('admin.update_request_status', request_id=blood_request.id) }}" data-confirm="Mark this request as completed? This will update the donor's donation history and start their cooldown.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="complete">
+                <button class="btn btn-red" type="submit"><i class="fa-solid fa-circle-check"></i> Force complete</button>
+              </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('admin.update_request_status', request_id=blood_request.id) }}" data-confirm="Cancel this request? Both parties will be notified.">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="cancel">
+              <button class="btn btn-outline-red" type="submit"><i class="fa-solid fa-ban"></i> Cancel request</button>
+            </form>
+          </div>
+          <p class="form-hint mt-2">Admin actions notify the affected users and are recorded against your administrator account.</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel">
+      <div class="panel__head"><h2>Parties</h2></div>
+      <div class="panel__body">
+        <div class="person-card">
+          <span class="avatar">{{ blood_request.receiver.initials }}</span>
+          <div><strong>{{ blood_request.receiver.full_name }}</strong><small>Receiver · {{ blood_request.receiver.email }}</small></div>
+        </div>
+        <p class="small text-muted mt-2"><i class="fa-solid fa-phone"></i> {{ blood_request.receiver.phone or 'No phone' }}</p>
+        <hr>
+        <div class="person-card">
+          <span class="avatar">{{ blood_request.donor.initials }}</span>
+          <div><strong>{{ blood_request.donor.full_name }}</strong><small>Donor · {{ blood_request.donor.email }}</small></div>
+        </div>
+        <p class="small text-muted mt-2"><i class="fa-solid fa-phone"></i> {{ blood_request.donor.phone or 'No phone' }}</p>
+        <p class="small text-muted"><i class="fa-solid fa-droplet"></i> {{ blood_request.blood_group }} · {{ blood_request.donor.donor_profile.city if blood_request.donor.donor_profile else '—' }}</p>
+        <div class="d-flex gap-2 flex-wrap mt-3">
+          <a class="btn btn-sm btn-outline-red" href="{{ url_for('admin.users', q=blood_request.donor.email) }}">Manage donor</a>
+          <a class="btn btn-sm btn-light-soft" href="{{ url_for('admin.users', q=blood_request.receiver.email) }}">Manage receiver</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Timeline</h2></div>
+      <div class="panel__body">
+        <div class="mini-timeline">
+          {% for event in blood_request.timeline %}
+            <div class="mini-timeline__item is-done"><span><i class="fa-solid fa-{{ event.icon }}"></i></span><div><strong>{{ event.label }}</strong><small>{{ event.at|dt('%d %b %Y, %I:%M %p') }}</small></div></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="callout callout--warning mt-4">
+      <i class="fa-solid fa-lock"></i>
+      <div><strong>Privacy note</strong><p>Administrator access to contact details is for moderation and support only. Do not export or reuse this data.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

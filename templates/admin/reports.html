@@ -1,0 +1,45 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import render_pagination, empty_state %}
+
+{% block title %}User Reports — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · moderation</span>{% endblock %}
+{% block page_title %}User reports{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Investigate concerns, record decisions and notify reporters.</p>{% endblock %}
+
+{% block dashboard_content %}
+<div class="tab-bar">
+  <a class="tab-pill {{ 'active' if status == 'open' else '' }}" href="{{ url_for('admin.reports', status='open') }}">Open &amp; reviewing</a>
+  {% for key in ['resolved', 'dismissed', 'all'] %}
+    <a class="tab-pill {{ 'active' if status == key else '' }}" href="{{ url_for('admin.reports', status=key) }}">{{ key|capitalize }}</a>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  <div class="panel__head"><div><h2>Report queue</h2><p>{{ pagination.total }} report{{ '' if pagination.total == 1 else 's' }} in this view.</p></div></div>
+  <div class="panel__body panel__body--flush">
+    {% for report in pagination.items %}
+      <a class="report-row" href="{{ url_for('admin.report_detail', report_id=report.id) }}">
+        <span class="report-row__icon"><i class="fa-solid fa-flag"></i></span>
+        <span class="report-row__main">
+          <span class="report-row__top">
+            <strong>{{ report.reason }}</strong>
+            <span class="mini-badge mini-badge--{{ 'warning' if report.status == 'open' else ('info' if report.status == 'reviewing' else ('success' if report.status == 'resolved' else 'muted')) }}">
+              {{ report_status_meta[report.status].label }}
+            </span>
+          </span>
+          <span class="report-row__meta">
+            <span><i class="fa-solid fa-user"></i> {{ report.reporter.full_name }} → {{ report.reported_user.full_name }}</span>
+            <span><i class="fa-regular fa-clock"></i> {{ report.created_at|timeago }}</span>
+          </span>
+          <span class="report-row__preview">{{ report.description|truncate(150) }}</span>
+        </span>
+        <span class="report-row__arrow"><i class="fa-solid fa-chevron-right"></i></span>
+      </a>
+    {% else %}
+      {{ empty_state('flag', 'No reports here', 'When a user reports a concern, it will appear in this queue for review.') }}
+    {% endfor %}
+  </div>
+</div>
+
+{{ render_pagination(pagination) }}
+{% endblock %}

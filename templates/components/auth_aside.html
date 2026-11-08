@@ -1,0 +1,26 @@
+<aside class="auth-visual">
+  <div class="auth-visual__bg" aria-hidden="true"><span></span><span></span></div>
+  <div class="auth-visual__content">
+    <a class="auth-brand" href="{{ url_for('main.home') }}">
+      <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="" width="42" height="42">
+      <span class="brand-text">Blood<span>Connect</span></span>
+    </a>
+
+    <div class="auth-visual__copy">
+      <span class="eyebrow eyebrow--light">{{ aside_eyebrow or 'Community blood network' }}</span>
+      <h2>{{ aside_title or 'Every drop can be someone’s tomorrow.' }}</h2>
+      <p>{{ aside_text or 'Join a verified network of donors and receivers working together to make blood available faster.' }}</p>
+    </div>
+
+    <ul class="auth-points">
+      {% for point in aside_points or ['Verified donor profiles reviewed by admins', 'Consent-first contact sharing', 'Live request tracking and notifications'] %}
+        <li><i class="fa-solid fa-circle-check"></i> {{ point }}</li>
+      {% endfor %}
+    </ul>
+
+    <div class="auth-visual__foot">
+      <div class="auth-stat"><strong>{{ stats.available_donors if stats is defined else '—' }}</strong><span>verified donors available</span></div>
+      <div class="auth-stat"><strong>{{ stats.cities if stats is defined else '—' }}</strong><span>cities covered</span></div>
+    </div>
+  </div>
+</aside>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="error-page">
+  <div class="container">
+    <div class="error-card">
+      <div class="error-card__art" aria-hidden="true">
+        <span class="error-card__code">{% block error_code %}404{% endblock %}</span>
+        <span class="error-card__icon"><i class="fa-solid fa-{% block error_icon %}droplet{% endblock %}"></i></span>
+      </div>
+      <span class="eyebrow">Blood Connect</span>
+      <h1>{% block error_title %}Page not found{% endblock %}</h1>
+      <p>{% block error_message %}The page you are looking for may have been moved or no longer exists.{% endblock %}</p>
+      <div class="error-card__actions">
+        <a class="btn btn-red" href="{{ url_for('main.home') }}"><i class="fa-solid fa-house"></i> Back to home</a>
+        <a class="btn btn-outline-red" href="{{ url_for('main.find_donors') }}">Find donors</a>
+        {% block error_extra_actions %}{% endblock %}
+      </div>
+      <div class="error-card__help">
+        <i class="fa-solid fa-circle-question"></i>
+        <span>Need help? <a href="mailto:{{ config.SUPPORT_EMAIL }}">Contact support</a> or read the <a href="{{ url_for('main.about') }}#faq">FAQs</a>.</span>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

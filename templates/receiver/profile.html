@@ -1,0 +1,92 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/forms.html" import render_field, password_field %}
+
+{% block title %}My Receiver Profile — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Receiver account</span>{% endblock %}
+{% block page_title %}My profile{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Accurate details make requests faster and coordination safer.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('receiver.dashboard') }}"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="row g-4">
+  <div class="col-xl-8">
+    <form method="post" class="panel needs-validation" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="panel__head">
+        <div><h2>Receiver details</h2><p>These details prefill your blood requests.</p></div>
+        <span class="mini-badge mini-badge--verified"><i class="fa-solid fa-circle-check"></i> Active receiver</span>
+      </div>
+      <div class="panel__body">
+        <div class="form-section form-section--flush">
+          <div class="form-section__head"><span>01</span><div><h2>Identity &amp; login</h2><p>Used for sign-in and request coordination.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-6">{{ render_field(form.full_name) }}</div>
+            <div class="col-md-6">{{ render_field(form.email) }}</div>
+            <div class="col-md-6">{{ render_field(form.phone) }}</div>
+            <div class="col-md-6">{{ render_field(form.city) }}</div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section__head"><span>02</span><div><h2>Care context</h2><p>Helps us tailor request defaults.</p></div></div>
+          <div class="row g-3">
+            <div class="col-md-7">{{ render_field(form.address) }}</div>
+            <div class="col-md-5">{{ render_field(form.patient_relation) }}</div>
+            <div class="col-md-12">{{ render_field(form.preferred_hospital) }}</div>
+          </div>
+        </div>
+
+        <div class="callout callout--info">
+          <i class="fa-solid fa-user-lock"></i>
+          <div><strong>Responsible use</strong><p>Donor contact details are shared only with consent after acceptance. Never use them for marketing or unrelated purposes. Reports go directly to administrators.</p></div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap mt-3">
+          {{ form.submit(class_='btn btn-red') }}
+          <a class="btn btn-light-soft" href="{{ url_for('receiver.dashboard') }}">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel">
+      <div class="panel__head"><h2>Account snapshot</h2></div>
+      <div class="panel__body">
+        <div class="person-card">
+          <span class="avatar avatar--lg">{{ current_user.initials }}</span>
+          <div><strong>{{ current_user.full_name }}</strong><small>{{ current_user.email }}</small></div>
+        </div>
+        <div class="progress-block mt-4">
+          <div class="progress-block__top"><span>Profile completeness</span><strong>{{ profile.profile_completeness }}%</strong></div>
+          <div class="progress" role="progressbar" aria-valuenow="{{ profile.profile_completeness }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {{ profile.profile_completeness }}%"></div>
+          </div>
+        </div>
+        <div class="detail-grid detail-grid--two mt-3">
+          <div class="detail-item"><span>Member since</span><strong>{{ current_user.created_at|d('%b %Y') }}</strong></div>
+          <div class="detail-item"><span>Last sign-in</span><strong>{{ current_user.last_login_at|d('%d %b, %H:%M') if current_user.last_login_at else '—' }}</strong></div>
+          <div class="detail-item"><span>Requests made</span><strong>{{ current_user.requests_made.count() }}</strong></div>
+          <div class="detail-item"><span>City</span><strong>{{ profile.city }}</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Quick actions</h2></div>
+      <div class="panel__body">
+        <a class="quick-action" href="{{ url_for('main.find_donors', city=profile.city) }}"><span><i class="fa-solid fa-magnifying-glass"></i></span><div><strong>Find donors nearby</strong><small>Search {{ profile.city }}</small></div><i class="fa-solid fa-chevron-right"></i></a>
+        <a class="quick-action" href="{{ url_for('receiver.requests_list') }}"><span><i class="fa-solid fa-inbox"></i></span><div><strong>My requests</strong><small>Track every response</small></div><i class="fa-solid fa-chevron-right"></i></a>
+        <a class="quick-action" href="{{ url_for('main.notifications') }}"><span><i class="fa-regular fa-bell"></i></span><div><strong>Notifications</strong><small>Donor responses and updates</small></div><i class="fa-solid fa-chevron-right"></i></a>
+      </div>
+    </div>
+
+    <div class="callout callout--warning mt-4">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <div><strong>Emergency?</strong><p>Contact the hospital blood bank and local emergency services first. Blood Connect coordinates donors but does not provide medical care.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

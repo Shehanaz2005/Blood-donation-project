@@ -1,0 +1,52 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import render_pagination, status_badge, urgency_badge, empty_state %}
+
+{% block title %}My Blood Requests — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Receiver inbox</span>{% endblock %}
+{% block page_title %}My blood requests{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Track every request from sent to completed.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-red btn-sm" href="{{ url_for('main.find_donors') }}"><i class="fa-solid fa-plus"></i> New request</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="tab-bar">
+  <a class="tab-pill {{ 'active' if current_status == 'all' else '' }}" href="{{ url_for('receiver.requests_list', status='all') }}">
+    All <span>{{ counts.get('all', 0) }}</span>
+  </a>
+  {% for status in statuses %}
+    <a class="tab-pill {{ 'active' if current_status == status else '' }}" href="{{ url_for('receiver.requests_list', status=status) }}">
+      {{ status_meta[status].label }} <span>{{ counts.get(status, 0) }}</span>
+    </a>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  <div class="panel__body panel__body--flush">
+    {% for item in pagination.items %}
+      <a class="request-row" href="{{ url_for('receiver.request_detail', request_id=item.id) }}">
+        <span class="request-row__blood">{{ item.blood_group }}</span>
+        <span class="request-row__main">
+          <span class="request-row__title">
+            <strong>{{ item.units }} unit{{ '' if item.units == 1 else 's' }} · {{ item.donor.full_name }}</strong>
+            {{ urgency_badge(item.urgency) }}
+            {{ status_badge(item.status) }}
+          </span>
+          <span class="request-row__meta">
+            <span><i class="fa-solid fa-hospital"></i> {{ item.hospital_name }}</span>
+            <span><i class="fa-solid fa-location-dot"></i> {{ item.city }}</span>
+            <span><i class="fa-regular fa-calendar"></i> Needed {{ item.needed_by|d if item.needed_by else 'ASAP' }}</span>
+            <span><i class="fa-regular fa-clock"></i> {{ item.created_at|timeago }}</span>
+          </span>
+          <span class="request-row__ref">Ref {{ item.reference }}</span>
+        </span>
+        <span class="request-row__arrow"><i class="fa-solid fa-chevron-right"></i></span>
+      </a>
+    {% else %}
+      {{ empty_state('inbox', 'No requests here', 'Search for a verified donor and send your first request. It only takes a minute.', url_for('main.find_donors'), 'Find donors') }}
+    {% endfor %}
+  </div>
+</div>
+
+{{ render_pagination(pagination) }}
+{% endblock %}

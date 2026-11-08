@@ -1,0 +1,58 @@
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="navbar-brand" href="{{ url_for('main.home') }}">
+          <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="" width="38" height="38">
+          <span class="brand-text">Blood<span>Connect</span></span>
+        </a>
+        <p>A community-powered blood donation network. Find verified donors quickly, coordinate safely, and help patients get the blood they need.</p>
+        <div class="footer-note">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span>For life-threatening emergencies, call your local emergency number immediately. Blood Connect is a coordination tool, not an emergency service.</span>
+        </div>
+      </div>
+
+      <div>
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="{{ url_for('main.home') }}">Home</a></li>
+          <li><a href="{{ url_for('main.find_donors') }}">Find donors</a></li>
+          <li><a href="{{ url_for('main.about') }}">About us</a></li>
+          <li><a href="{{ url_for('main.about') }}#faq">FAQs</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>Get involved</h3>
+        <ul>
+          <li><a href="{{ url_for('auth.register_donor') }}">Become a donor</a></li>
+          <li><a href="{{ url_for('auth.register_receiver') }}">Create receiver account</a></li>
+          <li><a href="{{ url_for('auth.login') }}">Sign in</a></li>
+          {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('main.notifications') }}">Notifications</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div>
+        <h3>Trust &amp; safety</h3>
+        <ul>
+          <li><a href="{{ url_for('main.about') }}#eligibility">Donor eligibility</a></li>
+          <li><a href="{{ url_for('main.about') }}#privacy">Privacy &amp; consent</a></li>
+          <li><a href="{{ url_for('main.about') }}#safety">Safe coordination</a></li>
+          <li><a href="mailto:{{ config.SUPPORT_EMAIL }}">Contact support</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>&copy; {{ current_year }} {{ app_name }}. Built for safer, faster blood coordination.</span>
+      <span class="footer-bottom__links">
+        <a href="{{ url_for('main.about') }}#privacy">Privacy</a>
+        <a href="{{ url_for('main.about') }}#faq">Support</a>
+        <a href="{{ url_for('main.healthz') }}">Status</a>
+      </span>
+    </div>
+  </div>
+</footer>

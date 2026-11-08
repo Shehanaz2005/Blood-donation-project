@@ -1,0 +1,73 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import render_pagination, empty_state %}
+
+{% block title %}Manage Receivers — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Admin · people</span>{% endblock %}
+{% block page_title %}Receivers{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Review receiver accounts and their request activity.</p>{% endblock %}
+
+{% block dashboard_content %}
+<form class="admin-filter panel" method="get" action="{{ url_for('admin.receivers') }}">
+  <div class="panel__body">
+    <div class="row g-3 align-items-end">
+      <div class="col-lg-7">
+        <label class="form-label" for="receiverSearch">Search</label>
+        <input class="form-control" id="receiverSearch" name="q" value="{{ q }}" placeholder="Name, email, phone or city">
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label">Account filter</label>
+        <div class="form-control form-control--static">All active receiver accounts</div>
+      </div>
+      <div class="col-lg-2 d-flex gap-2">
+        <button class="btn btn-red w-100" type="submit">Search</button>
+        <a class="btn btn-light-soft" href="{{ url_for('admin.receivers') }}" aria-label="Clear search"><i class="fa-solid fa-xmark"></i></a>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="panel mt-4">
+  <div class="panel__head">
+    <div><h2>Receiver directory</h2><p>{{ pagination.total }} receiver profile{{ '' if pagination.total == 1 else 's' }}.</p></div>
+  </div>
+  <div class="table-responsive">
+    <table class="table app-table app-table--admin align-middle">
+      <thead><tr><th>Receiver</th><th>Contact</th><th>City</th><th>Patient relation</th><th>Requests</th><th>Status</th><th>Joined</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for receiver in pagination.items %}
+          <tr>
+            <td>
+              <div class="table-person">
+                <span class="avatar avatar--sm">{{ receiver.user.initials }}</span>
+                <div><strong>{{ receiver.user.full_name }}</strong><small>{{ receiver.preferred_hospital or 'No preferred hospital' }}</small></div>
+              </div>
+            </td>
+            <td><a class="table-link" href="mailto:{{ receiver.user.email }}">{{ receiver.user.email }}</a><small class="d-block text-muted">{{ receiver.user.phone or 'No phone' }}</small></td>
+            <td>{{ receiver.city }}</td>
+            <td>{{ receiver.patient_relation or '—' }}</td>
+            <td>{{ receiver.user.requests_made.count() }}</td>
+            <td>
+              {% if receiver.user.is_active %}
+                <span class="mini-badge mini-badge--available"><i class="fa-solid fa-circle"></i> Active</span>
+              {% else %}
+                <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-ban"></i> Disabled</span>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ receiver.created_at|d('%d %b %Y') }}</td>
+            <td class="text-end">
+              <div class="table-actions">
+                <a class="btn btn-sm btn-light-soft" href="{{ url_for('admin.users', q=receiver.user.email) }}" title="Manage account"><i class="fa-solid fa-user-gear"></i></a>
+                <a class="btn btn-sm btn-outline-red" href="{{ url_for('admin.requests_list', q=receiver.user.full_name) }}" title="View requests"><i class="fa-solid fa-inbox"></i></a>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8">{{ empty_state('hand-holding-medical', 'No receivers found', 'Try a different search term.') }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ render_pagination(pagination) }}
+{% endblock %}

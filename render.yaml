@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: blood-connect
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask --app run.py db upgrade && waitress-serve --listen=0.0.0.0:$PORT wsgi:app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: REMEMBER_COOKIE_SECURE
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: blood-connect-db
+          property: connectionString
+
+databases:
+  - name: blood-connect-db
+    plan: free

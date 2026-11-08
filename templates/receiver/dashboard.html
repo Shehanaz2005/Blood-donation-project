@@ -1,0 +1,144 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import stat_card, status_badge, urgency_badge, donor_card, empty_state %}
+
+{% block title %}Receiver Dashboard — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Receiver dashboard</span>{% endblock %}
+{% block page_title %}Hello, {{ current_user.display_name }}.{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Find a verified donor, send a request and track every response.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-red btn-sm" href="{{ url_for('main.find_donors') }}"><i class="fa-solid fa-magnifying-glass"></i> Find donors</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="receiver-hero">
+  <div class="receiver-hero__copy">
+    <span class="eyebrow eyebrow--light">Need blood?</span>
+    <h2>Search verified donors in {{ profile.city }} and beyond.</h2>
+    <p>Filter by blood group, city, availability and compatibility. Contact details stay private until a donor accepts your request.</p>
+    <div class="d-flex gap-2 flex-wrap">
+      <a class="btn btn-white" href="{{ url_for('main.find_donors', city=profile.city) }}"><i class="fa-solid fa-location-dot"></i> Donors in {{ profile.city }}</a>
+      <a class="btn btn-outline-light" href="{{ url_for('main.find_donors') }}">Search all cities</a>
+    </div>
+  </div>
+  <div class="receiver-hero__groups">
+    <span>Quick search by group</span>
+    <div class="blood-choice-grid blood-choice-grid--compact">
+      {% for group in blood_groups %}
+        <a class="blood-choice" href="{{ url_for('main.find_donors', blood_group=group, city=profile.city) }}">
+          <span class="blood-choice__group">{{ group }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="stats-grid mt-4">
+  {{ stat_card('Active requests', stats.active, 'hourglass-half', 'amber', 'Pending or accepted') }}
+  {{ stat_card('Awaiting donor', stats.pending, 'clock', 'blue', 'No response yet') }}
+  {{ stat_card('Accepted', stats.accepted, 'hand-holding-medical', 'green', 'Donor is coordinating') }}
+  {{ stat_card('Completed', stats.completed, 'circle-check', 'red', 'Confirmed donations') }}
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-xl-7">
+    <div class="panel">
+      <div class="panel__head">
+        <div><h2>Active requests</h2><p>Requests that still need attention.</p></div>
+        <a class="link-btn" href="{{ url_for('receiver.requests_list') }}">View all</a>
+      </div>
+      <div class="panel__body panel__body--flush">
+        {% for item in active_requests %}
+          <a class="request-list-item" href="{{ url_for('receiver.request_detail', request_id=item.id) }}">
+            <span class="request-list-item__icon"><i class="fa-solid fa-droplet"></i></span>
+            <span class="request-list-item__body">
+              <span class="request-list-item__top">
+                <strong>{{ item.units }} unit{{ '' if item.units == 1 else 's' }} of {{ item.blood_group }} · {{ item.donor.full_name }}</strong>
+                {{ status_badge(item.status) }}
+              </span>
+              <span class="request-list-item__meta">
+                <i class="fa-solid fa-hospital"></i> {{ item.hospital_name }}
+                <i class="fa-solid fa-location-dot"></i> {{ item.city }}
+                <i class="fa-regular fa-calendar"></i> {{ item.needed_by|d if item.needed_by else 'ASAP' }}
+              </span>
+              <span class="request-list-item__foot">Ref {{ item.reference }} · sent {{ item.created_at|timeago }}</span>
+            </span>
+            <i class="fa-solid fa-chevron-right request-list-item__arrow"></i>
+          </a>
+        {% else %}
+          {{ empty_state('inbox', 'No active requests', 'When you send a blood request, you can track the donor’s response here.', url_for('main.find_donors'), 'Find a donor') }}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head">
+        <div><h2>Request history</h2><p>Your latest requests across all statuses.</p></div>
+        <a class="link-btn" href="{{ url_for('receiver.requests_list') }}">All requests</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table app-table align-middle">
+          <thead><tr><th>Reference</th><th>Donor</th><th>Blood</th><th>Status</th><th>Sent</th><th></th></tr></thead>
+          <tbody>
+            {% for item in recent_requests %}
+              <tr>
+                <td><span class="mono">{{ item.reference }}</span></td>
+                <td>{{ item.donor.full_name }}</td>
+                <td>{{ item.units }} × {{ item.blood_group }}</td>
+                <td>{{ status_badge(item.status) }}</td>
+                <td class="text-muted">{{ item.created_at|timeago }}</td>
+                <td class="text-end"><a class="table-link" href="{{ url_for('receiver.request_detail', request_id=item.id) }}">View</a></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="6" class="text-center text-muted py-4">No requests yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="panel">
+      <div class="panel__head"><h2>Suggested donors</h2><a class="link-btn" href="{{ url_for('main.find_donors') }}">Browse all</a></div>
+      <div class="panel__body">
+        {% for donor in suggested_donors %}
+          <a class="suggested-donor" href="{{ donor.url }}">
+            <span class="avatar">{{ donor.initials }}</span>
+            <span class="suggested-donor__body">
+              <strong>{{ donor.name }}</strong>
+              <small><i class="fa-solid fa-location-dot"></i> {{ donor.city }} · {{ donor.total_donations }} donation{{ '' if donor.total_donations == 1 else 's' }}</small>
+            </span>
+            <span class="blood-badge">{{ donor.blood_group }}</span>
+          </a>
+        {% else %}
+          <div class="panel-empty"><i class="fa-solid fa-droplet"></i><p>No verified donors available yet. Check back soon.</p></div>
+        {% endfor %}
+        <div class="callout callout--info mt-3">
+          <i class="fa-solid fa-shield-halved"></i>
+          <div><strong>Verified donors first</strong><p>Search shows verified, eligible donors by default. You can widen the filters if needed.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><h2>Profile readiness</h2></div>
+      <div class="panel__body">
+        <div class="progress-block">
+          <div class="progress-block__top"><span>Profile completeness</span><strong>{{ profile.profile_completeness }}%</strong></div>
+          <div class="progress" role="progressbar" aria-valuenow="{{ profile.profile_completeness }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="progress-bar" style="width: {{ profile.profile_completeness }}%"></div>
+          </div>
+          <p class="form-hint">Complete hospital and location details so requests can be prefilled accurately.</p>
+        </div>
+        <div class="detail-grid detail-grid--two mt-3">
+          <div class="detail-item"><span>City</span><strong>{{ profile.city }}</strong></div>
+          <div class="detail-item"><span>Relation</span><strong>{{ profile.patient_relation or '—' }}</strong></div>
+          <div class="detail-item"><span>Preferred hospital</span><strong>{{ profile.preferred_hospital or 'Not set' }}</strong></div>
+          <div class="detail-item"><span>Phone</span><strong>{{ current_user.phone }}</strong></div>
+        </div>
+        <a class="btn btn-outline-red w-100 mt-3" href="{{ url_for('receiver.profile_edit') }}">Edit profile</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

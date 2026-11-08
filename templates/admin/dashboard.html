@@ -1,0 +1,147 @@
+{% extends "dashboard_base.html" %}
+{% from "macros/ui.html" import stat_card, status_badge, urgency_badge, empty_state %}
+
+{% block title %}Admin Dashboard — Blood Connect{% endblock %}
+{% block page_kicker %}<span class="eyebrow">Administrator console</span>{% endblock %}
+{% block page_title %}Platform overview{% endblock %}
+{% block page_subtitle %}<p class="dash-subtitle">Verification, requests, reports and growth at a glance.</p>{% endblock %}
+{% block page_actions %}
+  <a class="btn btn-outline-red btn-sm" href="{{ url_for('admin.donors', verified='0') }}"><i class="fa-solid fa-user-shield"></i> Pending verification ({{ stats.pending_verifications }})</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="stats-grid">
+  {{ stat_card('Total accounts', stats.total_users, 'users', 'blue', stats.active_users ~ ' active') }}
+  {{ stat_card('Donors', stats.donors, 'droplet', 'red', stats.available_donors ~ ' available') }}
+  {{ stat_card('Receivers', stats.receivers, 'hand-holding-medical', 'green', stats.new_users_30 ~ ' new in 30 days') }}
+  {{ stat_card('Open reports', stats.open_reports, 'flag', 'amber', 'Needs moderation') }}
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel__head"><div><h2>Account growth</h2><p>New registrations over the last six months.</p></div></div>
+      <div class="panel__body">
+        <div class="chart-wrap"><canvas id="growthChart" aria-label="Monthly registrations chart" role="img"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel__head"><div><h2>Donors by blood group</h2><p>Coverage across the directory.</p></div></div>
+      <div class="panel__body">
+        <div class="chart-wrap chart-wrap--donut"><canvas id="groupChart" aria-label="Donors by blood group chart" role="img"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel__head"><div><h2>Request pipeline</h2><p>Every request by current status.</p></div></div>
+      <div class="panel__body">
+        <div class="chart-wrap"><canvas id="statusChart" aria-label="Requests by status chart" role="img"></canvas></div>
+        <div class="pipeline-legend">
+          <div><span>Fulfilment rate</span><strong>{{ stats.fulfilment_rate }}%</strong></div>
+          <div><span>Units collected</span><strong>{{ stats.units_collected }}</strong></div>
+          <div><span>Active requests</span><strong>{{ stats.active_requests }}</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel__head"><div><h2>Top cities</h2><p>Where donors are concentrated.</p></div></div>
+      <div class="panel__body">
+        {% for row in stats.top_cities %}
+          <div class="city-bar">
+            <span class="city-bar__name">{{ row.city }}</span>
+            <span class="city-bar__track"><span style="width: {{ (row.total / stats.top_cities[0].total * 100) if stats.top_cities[0].total else 0 }}%"></span></span>
+            <span class="city-bar__value">{{ row.total }}</span>
+          </div>
+        {% else %}
+          <div class="panel-empty"><i class="fa-solid fa-location-dot"></i><p>No donor cities recorded yet.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-xl-7">
+    <div class="panel">
+      <div class="panel__head">
+        <div><h2>Recent requests</h2><p>The latest activity across the platform.</p></div>
+        <a class="link-btn" href="{{ url_for('admin.requests_list') }}">Manage requests</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table app-table align-middle">
+          <thead><tr><th>Reference</th><th>Receiver</th><th>Donor</th><th>Blood</th><th>Status</th><th>Created</th><th></th></tr></thead>
+          <tbody>
+            {% for item in stats.recent_requests %}
+              <tr>
+                <td><span class="mono">{{ item.reference }}</span></td>
+                <td>{{ item.receiver.full_name }}</td>
+                <td>{{ item.donor.full_name }}</td>
+                <td>{{ item.units }} × {{ item.blood_group }}</td>
+                <td>{{ status_badge(item.status) }}</td>
+                <td class="text-muted">{{ item.created_at|timeago }}</td>
+                <td class="text-end"><a class="table-link" href="{{ url_for('admin.request_detail', request_id=item.id) }}">View</a></td>
+              </tr>
+            {% else %}
+              <tr><td colspan="7" class="text-center text-muted py-4">No requests yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="panel">
+      <div class="panel__head">
+        <div><h2>Verification queue</h2><p>Newest donors awaiting review.</p></div>
+        <a class="link-btn" href="{{ url_for('admin.donors', verified='0') }}">View queue</a>
+      </div>
+      <div class="panel__body panel__body--flush">
+        {% for donor in stats.pending_donors %}
+          <div class="verification-row">
+            <span class="avatar">{{ donor.user.initials }}</span>
+            <div class="verification-row__body">
+              <strong>{{ donor.user.full_name }}</strong>
+              <small>{{ donor.blood_group }} · {{ donor.city }} · joined {{ donor.created_at|timeago }}</small>
+            </div>
+            <form method="post" action="{{ url_for('admin.verify_donor', donor_id=donor.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="verify">
+              <button class="btn btn-sm btn-red" type="submit"><i class="fa-solid fa-check"></i> Verify</button>
+            </form>
+          </div>
+        {% else %}
+          <div class="panel-empty"><i class="fa-solid fa-user-shield"></i><p>Verification queue is clear. Great work.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel__head"><div><h2>Admin reminders</h2><p>Keep the network healthy.</p></div></div>
+      <div class="panel__body">
+        <ul class="icon-list">
+          <li><i class="fa-solid fa-user-shield"></i> Verify donors only after checking name, blood group and city consistency.</li>
+          <li><i class="fa-solid fa-flag"></i> Resolve reports with a clear internal note.</li>
+          <li><i class="fa-solid fa-user-slash"></i> Disable accounts only for policy violations; document your reasoning.</li>
+          <li><i class="fa-solid fa-database"></i> Run <code>flask expire-requests</code> or use the dashboard to expire overdue requests.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="adminChartData">{{ chart_data|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% from "macros/ui.html" import donor_card %}
+
+{% block title %}{{ donor.user.full_name }} — Donor profile{% endblock %}
+{% block meta_description %}View {{ donor.user.full_name }}'s verified donor profile: blood group {{ donor.blood_group }}, {{ donor.city }}, availability and donation history.{% endblock %}
+
+{% block content %}
+<section class="profile-hero">
+  <div class="container">
+    <nav aria-label="Breadcrumb" class="breadcrumb-line">
+      <a href="{{ url_for('main.home') }}">Home</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <a href="{{ url_for('main.find_donors') }}">Find donors</a>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span>{{ donor.user.full_name }}</span>
+    </nav>
+
+    <div class="profile-hero__card">
+      <div class="profile-hero__main">
+        <span class="avatar avatar--xl">{{ donor.user.initials }}</span>
+        <div class="profile-hero__identity">
+          <div class="profile-hero__name">
+            <h1>{{ donor.user.full_name }}</h1>
+            {% if donor.is_verified %}
+              <span class="verified-chip"><i class="fa-solid fa-circle-check"></i> Verified donor</span>
+            {% else %}
+              <span class="pending-chip"><i class="fa-solid fa-clock"></i> Verification pending</span>
+            {% endif %}
+          </div>
+          <p class="profile-hero__meta">
+            <span><i class="fa-solid fa-location-dot"></i> {{ donor.city }}</span>
+            <span><i class="fa-regular fa-calendar"></i> Member since {{ donor.created_at|d('%b %Y') }}</span>
+            <span><i class="fa-solid fa-droplet"></i> {{ donor.total_donations }} donation{{ '' if donor.total_donations == 1 else 's' }}</span>
+          </p>
+          <div class="profile-hero__badges">
+            <span class="blood-badge blood-badge--lg">{{ donor.blood_group }}</span>
+            {% if donor.is_available and donor.is_eligible %}
+              <span class="mini-badge mini-badge--available"><i class="fa-solid fa-circle"></i> Available now</span>
+            {% elif donor.is_in_cooldown %}
+              <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-hourglass-half"></i> Next eligible {{ donor.next_eligible_date|d }}</span>
+            {% else %}
+              <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-circle"></i> Unavailable</span>
+            {% endif %}
+            <span class="mini-badge mini-badge--muted">{{ donor.donation_streak_label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-hero__actions">
+        {% if active_request %}
+          <a class="btn btn-red" href="{{ url_for('receiver.request_detail', request_id=active_request.id) }}">
+            <i class="fa-solid fa-inbox"></i> Track active request
+          </a>
+        {% elif data.request_url %}
+          <a class="btn btn-red" href="{{ data.request_url }}"><i class="fa-solid fa-droplet"></i> Request blood</a>
+        {% elif current_user.is_authenticated and current_user.is_receiver %}
+          <button class="btn btn-light-soft" type="button" disabled>Not accepting requests</button>
+        {% elif not current_user.is_authenticated %}
+          <a class="btn btn-red" href="{{ url_for('auth.login', next=request.path) }}">Sign in to contact</a>
+        {% endif %}
+        <a class="btn btn-outline-red" href="{{ url_for('main.find_donors') }}">Back to search</a>
+        {% if current_user.is_authenticated and not current_user.is_admin and current_user.id != donor.user_id %}
+          <a class="link-btn link-btn--danger mt-2" href="{{ url_for('main.report_user', user_id=donor.user_id) }}">
+            <i class="fa-regular fa-flag"></i> Report this profile
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section pt-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="panel">
+          <div class="panel__head"><h2>About this donor</h2></div>
+          <div class="panel__body">
+            {% if donor.bio %}
+              <p class="profile-bio">{{ donor.bio }}</p>
+            {% else %}
+              <p class="text-muted">This donor has not added a bio yet.</p>
+            {% endif %}
+
+            <div class="detail-grid">
+              <div class="detail-item"><span>Blood group</span><strong>{{ donor.blood_group }} — {{ blood_group_labels[donor.blood_group] }}</strong></div>
+              <div class="detail-item"><span>Age</span><strong>{{ donor.age }} years</strong></div>
+              <div class="detail-item"><span>Gender</span><strong>{{ donor.gender or 'Not specified' }}</strong></div>
+              <div class="detail-item"><span>City</span><strong>{{ donor.city }}</strong></div>
+              {% if donor.last_donation_date %}
+                <div class="detail-item"><span>Last donation</span><strong>{{ donor.last_donation_date|d }}</strong></div>
+              {% endif %}
+              <div class="detail-item"><span>Eligibility</span><strong>{{ 'Eligible now' if donor.is_eligible else 'Not eligible yet' }}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel mt-4">
+          <div class="panel__head">
+            <h2>Contact &amp; consent</h2>
+            <span class="mini-badge mini-badge--muted"><i class="fa-solid fa-lock"></i> Protected</span>
+          </div>
+          <div class="panel__body">
+            {% if data.contact_allowed %}
+              <div class="contact-box">
+                <div class="contact-box__icon"><i class="fa-solid fa-phone"></i></div>
+                <div>
+                  <span>Donor phone number</span>
+                  <strong>{{ data.phone or 'Not provided' }}</strong>
+                  {% if current_user.is_admin and data.email %}<small>Email: {{ data.email }}</small>{% endif %}
+                </div>
+              </div>
+              <p class="privacy-note"><i class="fa-solid fa-shield-halved"></i>
+                {% if current_user.is_authenticated and current_user.id == donor.user_id %}
+                  This is your own profile. Your number is visible to you here but stays hidden from public search.
+                {% elif current_user.is_admin %}
+                  Administrators can see contact details for moderation. Use them only for that purpose.
+                {% else %}
+                  You can see this because an accepted request exists and the donor shares contact details. Use it only to coordinate this donation.
+                {% endif %}
+              </p>
+            {% elif current_user.is_authenticated and current_user.is_receiver %}
+              <div class="contact-locked">
+                <span class="contact-locked__icon"><i class="fa-solid fa-user-lock"></i></span>
+                <div>
+                  <h3>Contact details are protected</h3>
+                  <p>
+                    {% if not donor.share_contact %}
+                      This donor has turned off phone sharing. You can still coordinate through the request and notifications.
+                    {% elif active_request %}
+                      You have an active request. The donor's number becomes visible after they accept.
+                    {% else %}
+                      Send a blood request first. If the donor accepts — and has consented to share — their phone number will appear here.
+                    {% endif %}
+                  </p>
+                </div>
+              </div>
+            {% else %}
+              <div class="contact-locked">
+                <span class="contact-locked__icon"><i class="fa-solid fa-lock"></i></span>
+                <div>
+                  <h3>Sign in as a receiver to contact this donor</h3>
+                  <p>Public profiles never expose phone numbers or email addresses. Receiver accounts can send a request, and contact is shared only with donor consent after acceptance.</p>
+                  <div class="d-flex gap-2 flex-wrap mt-3">
+                    <a class="btn btn-red btn-sm" href="{{ url_for('auth.register_receiver') }}">Create receiver account</a>
+                    <a class="btn btn-outline-red btn-sm" href="{{ url_for('auth.login', next=request.path) }}">Sign in</a>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <aside class="col-lg-4">
+        <div class="panel">
+          <div class="panel__head"><h2>Donation readiness</h2></div>
+          <div class="panel__body">
+            <div class="eligibility-meter {{ 'is-ready' if donor.can_accept_requests else 'is-waiting' }}">
+              <span class="eligibility-meter__icon"><i class="fa-solid fa-{{ 'circle-check' if donor.can_accept_requests else 'hourglass-half' }}"></i></span>
+              <div>
+                <strong>{{ 'Ready to help' if donor.can_accept_requests else 'Not accepting requests' }}</strong>
+                <p>
+                  {% if donor.can_accept_requests %}
+                    Verified, available and inside the safe donation window.
+                  {% else %}
+                    {{ donor.eligibility_reasons[0] if donor.eligibility_reasons else 'This donor is not available right now.' }}
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+
+            <div class="mini-timeline">
+              <div class="mini-timeline__item is-done">
+                <span><i class="fa-solid fa-user-plus"></i></span>
+                <div><strong>Joined Blood Connect</strong><small>{{ donor.created_at|d }}</small></div>
+              </div>
+              <div class="mini-timeline__item {{ 'is-done' if donor.is_verified else '' }}">
+                <span><i class="fa-solid fa-user-shield"></i></span>
+                <div><strong>Admin verification</strong><small>{% if donor.is_verified %}Verified{% if donor.verified_at %} on {{ donor.verified_at|d }}{% endif %}{% else %}Awaiting review{% endif %}</small></div>
+              </div>
+              <div class="mini-timeline__item {{ 'is-done' if donor.total_donations else '' }}">
+                <span><i class="fa-solid fa-droplet"></i></span>
+                <div><strong>Donation history</strong><small>{{ donor.total_donations }} completed donation{{ '' if donor.total_donations == 1 else 's' }}</small></div>
+              </div>
+              <div class="mini-timeline__item {{ 'is-done' if donor.is_eligible and donor.is_available else '' }}">
+                <span><i class="fa-solid fa-heart-pulse"></i></span>
+                <div><strong>Currently eligible</strong><small>{{ 'Yes — available now' if donor.is_eligible and donor.is_available else 'Not right now' }}</small></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel mt-4">
+          <div class="panel__head"><h2>Safety reminder</h2></div>
+          <div class="panel__body">
+            <ul class="icon-list">
+              <li><i class="fa-solid fa-hospital"></i> Confirm the hospital and patient details directly.</li>
+              <li><i class="fa-solid fa-hand-holding-droplet"></i> Donations are voluntary and never paid for.</li>
+              <li><i class="fa-solid fa-flag"></i> Report pressure, harassment or no-shows to admins.</li>
+              <li><i class="fa-solid fa-truck-medical"></i> Emergencies should always go through hospital care first.</li>
+            </ul>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    {% if similar %}
+      <div class="mt-5">
+        <div class="section-heading section-heading--row">
+          <div>
+            <span class="eyebrow">More donors</span>
+            <h2>Other {{ donor.blood_group }} donors</h2>
+          </div>
+          <a class="btn btn-outline-red" href="{{ url_for('main.find_donors', blood_group=donor.blood_group) }}">View all</a>
+        </div>
+        <div class="row g-4">
+          {% for item in similar %}
+            <div class="col-md-6 col-lg-4">{{ donor_card(item, current_user) }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
